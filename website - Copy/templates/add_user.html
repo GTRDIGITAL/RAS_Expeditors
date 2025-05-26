@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Adăugare utilizator nou</title>
+    <link rel="icon" href="/static/favicon.png" type="image/png">
+</head>
+<script>
+    function togglePassword() {
+      var passwordField = document.getElementById("password");
+      var toggleButton = document.getElementById("toggleButton");
+
+      if (passwordField.type === "password") {
+        passwordField.type = "text";
+        toggleButton.textContent = "Ascunde Parola";
+      } else {
+        passwordField.type = "password";
+        toggleButton.textContent = "Arată Parola";
+      }
+    }
+  </script>
+<body>
+    <h1>Adăugare utilizator nou</h1>
+    <form action="/register" method="post">
+        <label for="username">Nume utilizator:</label><br>
+        <input type="text" id="username" name="username"><br>
+        <label for="password">Parolă:</label><br>
+        <input type="password" id="password" name="password"><br>
+        <button type="button" id="toggleButton" onclick="togglePassword()">Arată Parola</button>
+        <label for="token">Token:</label><br>
+        <input type="text" id="token" name="token"><br><br>
+        <input type="submit" value="Adaugă utilizator">
+    </form>
+</body>
+</html>

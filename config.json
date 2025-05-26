@@ -1,0 +1,9 @@
+{
+    "mysql": {
+        "host": "efactura.mysql.database.azure.com",
+        "port": 3306,
+        "user": "useradmin",
+        "password": "Ho1*,3v1PBRY075a^d5-",
+        "database": "soft_contabil_database"
+    }
+}

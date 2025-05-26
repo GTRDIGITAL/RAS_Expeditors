@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autentificare</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: url('static/login3.jpg') no-repeat center center fixed;
+            background-size: 95%;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 120%;
+        }
+
+        .login-form {
+            margin-top: 10px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .input-container {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 95%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .password-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            color: #555;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .password-toggle input[type="checkbox"] {
+            margin-right: 5px;
+            display: none; /* Ascunde checkbox-ul implicit */
+        }
+
+        .password-toggle label {
+            cursor: pointer;
+        }
+
+        .password-toggle label::before {
+            content: "";
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .password-toggle input[type="checkbox"]:checked + label::before {
+            background-color: #0056b3;
+        }
+
+        .password-toggle label::after {
+            content: "Afișează parola";
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .password-toggle input[type="checkbox"]:checked + label::after {
+            content: "Ascunde parola";
+        }
+
+        button {
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <form id="login-form" class="login-form" action="/main" method="POST">
+            <h1>Autentificare</h1>
+            <div class="input-container">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="input-container">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+                <div class="password-toggle">
+                    <input type="checkbox" id="showPasswordCheckbox" onclick="togglePassword()">
+                    <label for="showPasswordCheckbox"></label>
+                </div>
+            </div>
+            <button type="submit">Authenticator</button>
+        </form>
+    </div>
+
+    <script>
+        function togglePassword() {
+            var passwordField = document.getElementById("password");
+            var showPasswordCheckbox = document.getElementById("showPasswordCheckbox");
+            var passwordToggleLabel = document.querySelector('.password-toggle label');
+
+            if (showPasswordCheckbox.checked) {
+                passwordField.type = "text"; // Afișează parola
+                //passwordToggleLabel.textContent = "Ascunde parola";
+            } else {
+                passwordField.type = "password"; // Ascunde parola
+                //passwordToggleLabel.textContent = "Afișează parola";
+            }
+        }
+    </script>
+
+</body>
+</html>

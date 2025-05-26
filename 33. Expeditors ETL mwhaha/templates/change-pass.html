@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schimbare Parolă</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(180deg, rgb(0, 0, 0) 80%, rgba(114, 2, 2, 0.864) 98%, rgb(0, 0, 0) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(230, 230, 230, 0.1);
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      border: 2px solid white;
+    }
+    .logo {
+      width: 150px;
+      margin-bottom: 30px;
+    }
+    .form-control {
+      border-radius: 5px;
+    }
+    .btn-change-password {
+      background-color: #e74c3c;
+      color: white;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+    .btn-change-password:hover {
+      background-color: #c0392b;
+    }
+    .error-message {
+      color: red;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <img src="static/expeditors_international_logo.webp" alt="Logo" class="logo">
+    <h3 class="mb-3">Schimbare Parolă</h3>
+
+    <form id="changePasswordForm">
+      <div class="mb-3">
+        <input type="password" id="currentPassword" class="form-control" placeholder="Parola actuală" required>
+      </div>
+      <div class="mb-3">
+        <input type="password" id="newPassword" class="form-control" placeholder="Noua parolă" required>
+      </div>
+      <div class="mb-3">
+        <input type="password" id="confirmPassword" class="form-control" placeholder="Confirmați noua parolă" required>
+      </div>
+
+      <p class="error-message" id="errorMessage">Parolele nu se potrivesc!</p>
+      <button type="submit" class="btn btn-change-password w-100">Schimbă Parola</button>
+    </form>
+    <br>
+    <a href="/login" style="color: #333; text-decoration: none;">Înapoi la autentificare</a>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+  <script>
+    document.getElementById("changePasswordForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      let currentPassword = document.getElementById("currentPassword").value;
+      let newPassword = document.getElementById("newPassword").value;
+      let confirmPassword = document.getElementById("confirmPassword").value;
+      let errorMessage = document.getElementById("errorMessage");
+
+      if (newPassword !== confirmPassword) {
+        errorMessage.style.display = "block";
+      } else {
+        // Dacă parolele se potrivesc, trimite schimbarea parolei
+        alert("Parola a fost schimbată cu succes!");
+        window.location.href = "/login"; // Redirecționează utilizatorul la pagina de login
+      }
+    });
+  </script>
+
+</body>
+</html>

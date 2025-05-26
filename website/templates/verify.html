@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autentificare 2 Pași</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(180deg, rgb(0, 0, 0) 80%, rgba(114, 2, 2, 0.864) 98%, rgb(0, 0, 0) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: rgb(255, 255, 255);
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(230, 230, 230, 0.1);
+      padding: 40px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    .logo {
+      width: 150px;
+      margin-bottom: 30px;
+    }
+    .input-container {
+      margin-bottom: 20px;
+      text-align: left;
+      color:black;
+    }
+    label {
+      color: white;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #e74c3c;
+      color: rgb(0, 0, 0);
+      border-radius: 5px;
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #c0392b;
+    }
+    .button-container {
+      margin-top: 20px;
+    }
+    .countdown {
+      color: black;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    
+    .error-message {
+      color: red;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+    <div class="container">
+        <img src="static/expeditors_international_logo.webp" alt="Logo" class="logo">
+        <h3 class="mb-3">Autentificare 2 Pași</h3>
+    
+        <form id="otpForm" class="login-form" method="POST">
+            <div class="input-container">
+                <label for="code">Cod OTP</label>
+                <input type="text" id="code" name="code" class="form-control" placeholder="Introduceți codul OTP" required>
+            </div>
+            <button type="submit" style="background-color:#e74c3c;color:white" class="btn w-100">Loghează-te</button>
+    
+            <div class="button-container">
+                <div id="countdown" class="countdown"></div>
+                <button type="button" style="background-color:#e74c3c;color:white; display: none;" id="generate-new-code" class="btn w-100" onclick="callPythonFunction()">Generează un cod nou</button>
+            </div>
+            <p class="error-message" id="otpErrorMessage">Cod OTP incorect!</p>
+        </form>
+    </div>
+    
+    <script>
+        function startCountdown() {
+            let seconds = 10;
+            const countdownDisplay = document.getElementById('countdown');
+            const generateButton = document.getElementById('generate-new-code');
+            
+            countdownDisplay.innerText = `Cod nou în ${seconds} secunde`;
+            generateButton.style.display = 'none';
+    
+            const countdown = setInterval(() => {
+                seconds--;
+                countdownDisplay.innerText = `Cod nou în ${seconds} secunde`;
+                
+                if (seconds <= 0) {
+                    clearInterval(countdown);
+                    countdownDisplay.style.display = 'none';
+                    generateButton.style.display = 'block';
+                }
+            }, 1000);
+        }
+    
+        window.onload = function() {
+            startCountdown();
+        };
+    
+        function callPythonFunction() {
+            fetch('/generate-new-code', { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Solicitare eșuată către Python.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert("Codul OTP nou va fi trimis pe email.");
+                    startCountdown();
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Eroare în comunicarea cu serverul Python.');
+                });
+        }
+    </script>
+    
+
+</body>
+</html>
