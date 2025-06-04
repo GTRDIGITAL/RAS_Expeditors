@@ -1,9 +1,9 @@
 {
-    "mysql": {
-        "host": "efactura.mysql.database.azure.com",
-        "port": 3306,
-        "user": "useradmin",
-        "password": "Ho1*,3v1PBRY075a^d5-",
-        "database": "soft_contabil_database"
-    }
+  "mysql": {
+    "user": "useradmin",
+    "password": "Ho1*,3v1PBRY075a^d5-",
+    "host": "efactura.mysql.database.azure.com",
+    "database": "soft_contabil_database"
+  },
+  "redis_url": "redis://localhost:6379/0"
 }

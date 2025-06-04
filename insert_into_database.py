@@ -1,15 +1,6 @@
 import pandas as pd
 import mysql.connector
 
-def parse_transaction_types(s):
-    if pd.isnull(s) or not str(s).strip():
-        return []
-    s = str(s).strip()
-    if s.startswith("[") and s.endswith("]"):
-        s = s[1:-1]
-    items = [item.strip().strip("'\"") for item in s.split(",") if item.strip()]
-    return items
-
 # Conectare la baza de date
 conn = mysql.connector.connect(
     host="efactura.mysql.database.azure.com",
@@ -21,69 +12,60 @@ cursor = conn.cursor()
 conn.autocommit = False  # pentru performanță
 
 # Citește fișierul Excel
-df = pd.read_excel("C:\\Dezvoltare\\RAS\\RAS Expeditors\\Fisiere expeditors\\Chart of accounts 1224.xlsx")
+df = pd.read_excel(r"C:\Dezvoltare\RAS\RAS Expeditors\Chart of accounts 1224 (003).xlsx.xlsm")
 df.columns = df.columns.str.strip()  # elimină spațiile de la început/final
 
-# Query inserare mapping
+# Query de inserare
 insert_mapping_query = """
-    INSERT INTO mapping (GL, BR, Statutory_GL, Statutory_Type, Headers)
-    VALUES (%s, %s, %s, %s, %s)
-"""
-
-# Query inserare transaction types
-insert_transaction_type_query = """
-    INSERT INTO mapping_transaction_types (GL, BR, transaction_type)
-    VALUES (%s, %s, %s)
+    INSERT INTO mapping (GL, Br, Statutory_GL, Statutory_Type, Transaction_Type, Headers)
+    VALUES (%s, %s, %s, %s, %s, %s)
 """
 
 mapping_batch = []
-transaction_batch = []
 batch_size = 1000
 
 for idx, row in df.iterrows():
     try:
         GL_raw = row.get("GL")
         if pd.isnull(GL_raw):
-            # GL e obligatoriu, sarim peste randul asta
             continue
-        GL = str(int(GL_raw))
+        GL = int(GL_raw)
 
-        BR_raw = row.get("Br")
-        if pd.isnull(BR_raw):
-            BR = None
-        else:
-            BR = str(int(BR_raw))
+        Br_raw = row.get("Br")
+        Br = int(Br_raw) if not pd.isnull(Br_raw) else None
 
         Statutory_GL = row.get("Statutory GL")
+        Statutory_GL = None if pd.isnull(Statutory_GL) else str(Statutory_GL).strip()
+
         Statutory_Type = row.get("Statutory Type")
+        Statutory_Type = None if pd.isnull(Statutory_Type) else str(Statutory_Type).strip()
+
+        Transaction_Type = row.get("Transaction Types")
+        Transaction_Type = None if pd.isnull(Transaction_Type) else str(Transaction_Type).strip()
+
         Headers = row.get("Headers")
+        Headers = None if pd.isnull(Headers) else str(Headers).strip()
 
-        mapping_batch.append((GL, BR, Statutory_GL, Statutory_Type, Headers))
+        # Opțional: sari peste rândurile fără Transaction_Type dacă vrei
+        # if not Transaction_Type:
+        #     continue
 
-        # Transaction Types
-        transaction_types = parse_transaction_types(row.get("Transaction Types"))
-        for tt in transaction_types:
-            transaction_batch.append((GL, BR, tt))
+        mapping_batch.append((GL, Br, Statutory_GL, Statutory_Type, Transaction_Type, Headers))
 
-        # Inserăm pe batch dacă s-a atins dimensiunea
         if len(mapping_batch) >= batch_size:
             cursor.executemany(insert_mapping_query, mapping_batch)
-            cursor.executemany(insert_transaction_type_query, transaction_batch)
             conn.commit()
             mapping_batch.clear()
-            transaction_batch.clear()
 
     except Exception as e:
         print(f"❌ Eroare la rândul {idx + 2}: {e}")
 
-# Ultimul flush pentru restul datelor
+# Flush final
 if mapping_batch:
     cursor.executemany(insert_mapping_query, mapping_batch)
-if transaction_batch:
-    cursor.executemany(insert_transaction_type_query, transaction_batch)
-conn.commit()
+    conn.commit()
 
 cursor.close()
 conn.close()
 
-print("✅ Inserare completă în mapping și mapping_transaction_types.")
+print("✅ Inserare completă în tabela 'mapping'.")

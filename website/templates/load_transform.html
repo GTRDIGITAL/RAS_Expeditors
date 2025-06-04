@@ -61,10 +61,11 @@
     }
 
     .card-body {
-      background-color: #ecf0f1;
-      color: #333;
-      height: fit-content;
-    }
+  background-color: #ecf0f1;
+  color: #333;
+  height: fit-content;
+  border-radius: 0 0 30px 30px;
+}
 
     .btn {
       border-radius: 25px;
@@ -360,11 +361,13 @@ input[type="checkbox"]:checked::after {
           color:white;
         }
         .card {
-            background: #e23232;
-            border-radius: 16px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease-in-out;
-        }
+    background: #e23232;
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease-in-out;
+    border-bottom-left-radius: 50px; /* Increased bottom-left radius */
+    border-bottom-right-radius: 50px; /* Increased bottom-right radius */
+}
         
         .card:hover {
             transform: translateY(-10px); /* Efect de ridicare la hover */
@@ -567,8 +570,9 @@ input[type="checkbox"]:checked::after {
         </div>
         <div class="card-body">
           <div class="nav-links">
+            <a href="javascript:void(0);" onclick="toggleSection('manual-import')" class="btn btn-outline-success">Manual import</a>
             <a href="javascript:void(0);" onclick="toggleSection('periode-mapping')" class="btn btn-outline-primary">Mapare GL prin Perioadă</a>
-            <a href="javascript:void(0);" onclick="toggleSection('manual-import')" class="btn btn-outline-success">Import Manual</a>
+            
             <a href="javascript:void(0);" onclick="toggleSection('add-entry')" class="btn btn-outline-warning">Adăugare Notă Contabilă</a>
             <a href="javascript:void(0);" onclick="toggleSection('show-all')" class="btn btn-outline-warning">Istoric si editare note contabile</a>
           </div>
@@ -602,6 +606,19 @@ input[type="checkbox"]:checked::after {
       .nav-links .btn:hover {
         opacity: 0.8; /* efect la hover */
       }
+
+      #fileNameDisplay {
+        margin-bottom: 5px; /* Add some space between the filename and the input */
+        display: block; /* Ensure it takes up the full width */
+    }
+
+    #uploadButton:disabled {
+    cursor: not-allowed;
+}
+
+#importButton:disabled {
+    cursor: not-allowed;
+}
     </style>
     
 
@@ -646,13 +663,23 @@ input[type="checkbox"]:checked::after {
   
   <!-- Secțiunea 2: Import Manual Excel -->
   <div class="card mb-4" id="manual-import" style="display:none;">
-      <div class="card-header">Import Manual pentru Mapare</div>
-      <div class="card-body">
-          <label class="label" for="fileUpload">Încărcați un fișier Excel:</label>
-          <input type="file" id="fileUpload" class="form-control">
-          <button class="btn btn-success mt-2">Start Mapping</button>
-      </div>
-  </div>
+    <div class="card-header">Manual Import for Mapping</div>
+    <div class="card-body">
+    <label class="label" for="fileUpload">Upload an Excel file:</label>
+    <input type="file" id="fileUpload" class="form-control">
+    <span id="fileNameDisplay" style="display:none;">
+        <i class="fas fa-check-circle text-success me-1"></i>
+    </span>
+
+     <!-- Progress Bar -->
+    <div class="progress mt-2" style="height: 20px;">
+        <div id="uploadProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+    </div>
+
+    <button class="btn btn-success mt-2" id="uploadButton" disabled data-toggle="tooltip" data-placement="top" title="Choose a file to import">Upload file</button>
+<button class="btn btn-success mt-2" id="importButton" data-toggle="tooltip" data-placement="top" title="Import into database">Import into database</button>
+</div>
+</div>
   
   <!-- Secțiunea 3: Adăugare Notă Contabilă -->
   <div class="card mb-4"  id="add-entry" style="display:none;">
@@ -812,13 +839,158 @@ input[type="checkbox"]:checked::after {
 
   
   <script>
-    
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const uploadButton = document.getElementById('uploadButton');
+    const importButton = document.getElementById('importButton');
+    const fileUpload = document.getElementById('fileUpload');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const uploadProgressBar = document.getElementById('uploadProgressBar');
+    let uploadSuccessful = false;
+
+    // Initially disable the upload and import buttons
+    uploadButton.disabled = true;
+    //importButton.disabled = true; //remove disabled
+
+    fileUpload.addEventListener('change', function() {
+        const file = fileUpload.files[0];
+
+        if (file) {
+            fileNameDisplay.innerHTML = `<i class="fas fa-check-circle text-success me-1"></i> Fisier selectat: ${file.name}`;
+            fileNameDisplay.style.display = "block";
+            uploadButton.removeAttribute("disabled"); // Enable the upload button
+        } else {
+            fileNameDisplay.textContent = "";
+            fileNameDisplay.style.display = "none";
+            uploadButton.disabled = true; // Disable the upload button
+            //importButton.disabled = true; // Disable the import button //remove disabled
+            uploadSuccessful = false;
+        }
+    });
+
+ uploadButton.addEventListener('click', function(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    const file = fileUpload.files[0];
+
+    if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/load_transform', true);
+
+        // Set initial progress to 0
+        uploadProgressBar.style.width = '0%';
+        uploadProgressBar.textContent = '0%';
+        uploadProgressBar.setAttribute('aria-valuenow', 0);
+
+        // Upload progress event (optional, for actual upload progress if possible)
+        xhr.upload.addEventListener("progress", function(event) {
+            if (event.lengthComputable) {
+                const percentComplete = (event.loaded / event.total) * 100;
+                uploadProgressBar.style.width = percentComplete + '%';
+                uploadProgressBar.textContent = percentComplete + '%';
+                uploadProgressBar.setAttribute('aria-valuenow', percentComplete);
+            }
+        });
+
+        // Request finished event
+       xhr.addEventListener("load", function() {
+    if (xhr.status === 200) {
+        // Request successful
+        const data = JSON.parse(xhr.responseText);
+        console.log('Server response:', data);
+
+        // Set progress bar to 100%
+        uploadProgressBar.style.width = '100%';
+        uploadProgressBar.textContent = '100%';
+        uploadProgressBar.setAttribute('aria-valuenow', 100);
+
+        uploadSuccessful = true;
+        uploadButton.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Uploaded';
+        uploadButton.disabled = false;
+
+        // Enable the import button
+        //importButton.removeAttribute("disabled"); //remove disabled
+        //importButton.style.cursor = "pointer"; //remove disabled
+        //importButton.classList.remove("disabled"); //remove disabled
+    } else {
+        // Request failed
+        alert('File upload failed.');
+        console.error('Error:', xhr.status);
+
+        uploadSuccessful = false;
+        uploadButton.innerHTML = 'Upload file';
+        //importButton.disabled = true; // Disable the import button //remove disabled
+
+        // Reset progress bar on failure
+        uploadProgressBar.style.width = '0%';
+        uploadProgressBar.textContent = '0%';
+        uploadProgressBar.setAttribute('aria-valuenow', 0);
+    }
+});
+
+        // Request error event
+        xhr.addEventListener("error", function() {
+            alert('File upload failed.');
+            console.error('Error during the upload.');
+
+            uploadSuccessful = false;
+            uploadButton.innerHTML = 'Upload file';
+            //importButton.disabled = true; // Disable the import button //remove disabled
+
+            // Reset progress bar on error
+            uploadProgressBar.style.width = '0%';
+            uploadProgressBar.textContent = '0%';
+            uploadProgressBar.setAttribute('aria-valuenow', 0);
+        });
+
+        xhr.send(formData);
+    } else {
+        alert('Please select a file.');
+
+        // Reset progress bar if no file selected
+        uploadProgressBar.style.width = '0%';
+        uploadProgressBar.textContent = '0%';
+        uploadProgressBar.setAttribute('aria-valuenow', 0);
+    }
+});
+    importButton.addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        // Send request to import data
+        const xhrImport = new XMLHttpRequest();
+        xhrImport.open('POST', '/upload_into_database', true);
+
+        xhrImport.addEventListener("load", function() {
+            if (xhrImport.status === 200) {
+                // Import successful
+                const data = JSON.parse(xhrImport.responseText);
+                console.log('Import response:', data);
+                alert('File imported successfully!');
+            } else {
+                // Import failed
+                alert('File import faileee.');
+                console.error('Error:', xhrImport.status);
+            }
+        });
+
+        /*xhrImport.addEventListener("error", function() {
+            alert('File import failed.');
+            console.error('Error during the import.');
+        });*/
+
+        xhrImport.send(); // No data needs to be sent, as the file is already on the server
+    });
+
     document.getElementById('sectionNav').addEventListener('change', function() {
       const section = document.getElementById(this.value);
       if (section) {
         window.scrollTo({ top: section.offsetTop - 80, behavior: 'smooth' });
       }
     });
+  });
   </script>
   <!-- Footer -->
   
@@ -905,6 +1077,8 @@ saveButton.addEventListener('click', function() {
     var section = document.getElementById(sectionId);
     if (section) {
       section.style.display = 'block';
+       // Scroll to the section
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
   function extractNotes() {
