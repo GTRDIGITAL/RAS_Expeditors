@@ -20,5 +20,6 @@ celery.Task = ContextTask
 from .website.procedurasql import procedura_mapare
 
 @celery.task()
+
 def mapareSQL_task():
     procedura_mapare()

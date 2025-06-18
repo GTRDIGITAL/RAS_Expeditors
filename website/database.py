@@ -1,5 +1,8 @@
 from .models import Users
 from . import db
+import mysql.connector
+
+
 
 def get_all_users():
     return Users.query.all()
@@ -13,3 +16,4 @@ def update_user_in_db(user_id, username, role):
         user.username = username
         user.role = role
         db.session.commit()
+        

@@ -213,3 +213,5 @@ def import_into_db(file):
     conn.commit()
     cursor.close()
     conn.close()
+    
+# import_into_db('D:\\Projects\\21. SAF-T Expeditors\\2. Fisiere input\\1\\REGISTRU JURNAL.xlsx')  # Exemplu de apelare a funcției

@@ -10,6 +10,7 @@ import time
 import pymysql
 import requests
 import xml.etree.ElementTree as ET
+import mysql.connector
 
 
 def citeste_configurare(file_path):
@@ -64,7 +65,28 @@ def get_user_from_db(user_id):
 
     return user
 
-        
+# def get_gl_from_db(startMonth, startYear, endMonth, endYear):
+#     connection = mysql.connector.connect(
+#         host=mysql_config['host'],
+#         user=mysql_config['user'],
+#         password=mysql_config['password'],
+#         database=mysql_config['database']
+#     )
+#     cursor = connection.cursor(dictionary=True)  # Rezultatul va fi un dicționar
+
+#     query = """
+#     SELECT Month, Year, GL, Statutory_GL, Br,  Amount
+#     FROM general_ledger
+#     WHERE DATE_FORMAT(date, '%%Y-%%m') BETWEEN %s AND %s
+# """
+#     periodStart = f"{startYear:04d}-{startMonth:02d}"
+#     periodEnd = f"{endYear:04d}-{endMonth:02d}"
+#     cursor.execute(query, (periodStart, periodEnd))
+
+#     cursor.close()
+#     connection.close()
+
+#     return gl     
 def update_user_in_db(user_id, username, role):
     connection = mysql.connector.connect(
         host=mysql_config['host'],

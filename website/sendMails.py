@@ -48,7 +48,7 @@ def send_email_via_graph_api(subject, recipient, body,attachment_path=None, cc_r
         "message": {
             "subject": subject,
             "body": {
-                "contentType": "Text",
+                "contentType": "HTML",
                 "content": body
             },
             "from": {
