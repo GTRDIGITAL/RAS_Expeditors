@@ -47,31 +47,7 @@ def get_previous_month(year, month):
         return year - 1, 12
     else:
         return year, month - 1
-# Celery task
-@celery.task(bind=True, autoretry_for=(redis.exceptions.ConnectionError, redis.exceptions.TimeoutError), retry_kwargs={'max_retries': 5}, retry_backoff=True, retry_jitter=True)
-def async_import_task(self, filepath):
-    """
-    Asynchronous task to import data into the database and update progress.
-    """
-    logger.info(f"Starting async_import_task with filepath: {filepath}")
-    try:
-        # Read the Excel file to get the total number of rows
-        df = pd.read_excel(filepath)
-        total_rows = len(df)
-        logger.info(f"Total rows in the file: {total_rows}")
 
-        # Call your import_into_db function
-        import_into_db(filepath)
-
-        # Update task progress to 100% after successful import
-        self.update_state(state='SUCCESS', meta={'current': total_rows, 'total': total_rows, 'progress': 100})
-        logger.info("Task completed successfully!")
-        return {'message': 'File imported successfully!', 'progress': 100}
-
-    except Exception as e:
-        logger.error(f"Task failed with error: {e}", exc_info=True)
-        self.update_state(state='FAILURE', meta={'exc_type': type(e).__name__, 'exc_message': str(e)})
-        raise
 
 # @views.route('/mapare')
 # def porneste_maparea():
@@ -740,19 +716,6 @@ def generate_monthlyTB():
 
 
 
-@views.route('/task_status/<task_id>')
-def task_status(task_id):
-    task_result = AsyncResult(task_id, app=celery)
-    result = {
-        'state': task_result.state,
-        'result': task_result.result,
-        'progress': 0
-    }
-    if task_result.state == 'PROGRESS' and task_result.info:
-        result['progress'] = task_result.info.get('progress', 0)
-    return jsonify(result)
-
-
 @views.route('/generate_reports')
 # @login_required
 # @admin_required
@@ -770,7 +733,6 @@ def generate_reports():
         return render_template('vizualizare_rapoarte.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id)
     else:
         return render_template('auth.html')
-
 
 @views.route('/upload_into_database', methods=['POST'])
 def upload_into_database():
