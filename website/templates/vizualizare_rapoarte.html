@@ -463,7 +463,7 @@ input[type="checkbox"]:checked::after {
          {% if fisier and fisier|length > 0 %}
          <div class="d-flex justify-content-end mb-3">
 <!-- <div class="d-flex justify-content-end mb-3"> -->
-  <button type="button" class="btn btn-outline-success" onclick="exportTableToExcel('tb-table', 'balanta_export')">
+  <button type="button" class="btn btn-outline-success" onclick="exportTableToExcel('tb-table', '{{ nume_export }}')">
   <i class="bi bi-file-earmark-excel"></i> Exportă în Excel
 </button>
 
@@ -500,7 +500,8 @@ input[type="checkbox"]:checked::after {
     </div>
   </div>
 
-
+</div>
+</form>
   <!-- Footer -->
   
 
@@ -509,46 +510,62 @@ input[type="checkbox"]:checked::after {
   <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js" crossorigin="anonymous"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+
+
   <!-- Custom JavaScript -->
-  <script>
-let activeFilters = {};  // Stocăm filtrele active pentru fiecare coloană
-function exportTableToExcel(tableID, filename = 'export', event) {
-  if (event) event.preventDefault();
+<script>
 
-  const table = document.getElementById(tableID);
-  const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
 
-  // Scriem workbook-ul ca BLOB
-  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'blob' });
+function exportTableToExcel(tableID, filename = 'export') {
+    const table = document.getElementById(tableID);
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
-  // Transformăm blob-ul într-un obiect File (altfel Flask nu-l vede)
-  const file = new File([wbout], filename + '.xlsx', {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  });
+    const blob = new Blob([wbout], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
 
-  // Construim FormData cu obiectul File
-  const formData = new FormData();
-  formData.append('file', file);
-
-  // Trimitem către Flask backend
-  fetch('/trimite-mail-export', {
-    method: 'POST',
-    body: formData
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === 'success') {
-      alert('Email trimis cu succes!');
-    } else {
-      alert('Eroare: ' + data.message);
+    // Salvare locală DOAR dacă filename NU începe cu 'GL' (case insensitive)
+    if (!filename.toLowerCase().startsWith('gl')) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename + '.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
-  })
-  .catch(err => {
-    console.error(err);
-    alert('A apărut o eroare.');
-  });
-}
 
+    // Trimite la Flask
+    const file = new File([blob], filename + '.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/trimite-mail-export', {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert('Email trimis cu succes!');
+      } else {
+        alert('Eroare: ' + data.message);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('A apărut o eroare.');
+    });
+  }
+
+let activeFilters = {};  // Stocăm filtrele active pentru fiecare coloană
+
+window.exportTableToExcel = exportTableToExcel;
 
 
 document.addEventListener("DOMContentLoaded", function () {

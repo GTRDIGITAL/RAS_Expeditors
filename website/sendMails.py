@@ -28,10 +28,14 @@ def send_email_via_graph_api(subject, recipient, body,attachment_path=None, cc_r
     if attachment_path:
         with open(attachment_path, "rb") as attachment_file:
             attachment_content = base64.b64encode(attachment_file.read()).decode('utf-8')
-        
+            if "\\" in attachment_path:
+                filename = attachment_path.split("\\")[-1]
+            else:
+                filename = attachment_path.split("/")[-1]
+
         attachment = {
             "@odata.type": "#microsoft.graph.fileAttachment",
-            "name": attachment_path.split("/")[-1],  # Numele fișierului
+            "name": filename,  # Numele fișierului
             "contentBytes": attachment_content
         }
     else:

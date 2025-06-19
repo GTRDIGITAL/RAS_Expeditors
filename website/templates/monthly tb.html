@@ -764,9 +764,10 @@ input[type="checkbox"]:checked::after {
       <div class="card-body">
          {% if tb_data and tb_data|length > 0 %}
          <div class="d-flex justify-content-end mb-3">
-<button type="button" onclick="exportStyledExcelFromTable('tb-table', 'balanta_stilata.xlsx')">
-    <i class="bi bi-file-earmark-excel"></i> Exportă în Excel
-  </button>
+<button type="button" class="btn btn-outline-success" onclick="exportTableToExcel('tb-table', '{{ nume_export }}')">
+  <i class="bi bi-file-earmark-excel"></i> Exportă în Excel
+</button>
+
 </div>
 
       <div class="table-responsive">
@@ -818,6 +819,52 @@ input[type="checkbox"]:checked::after {
   <!-- Custom JavaScript -->
   <script>
 let activeFilters = {};  // Stocăm filtrele active pentru fiecare coloană
+function exportTableToExcel(tableID, filename = 'export') {
+    const table = document.getElementById(tableID);
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+    const blob = new Blob([wbout], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    // Salvare locală DOAR dacă filename NU începe cu 'GL' (case insensitive)
+    if (!filename.toLowerCase().startsWith('gl')) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename + '.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Trimite la Flask
+    const file = new File([blob], filename + '.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('/trimite-mail-export', {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert('Email trimis cu succes!');
+      } else {
+        alert('Eroare: ' + data.message);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('A apărut o eroare.');
+    });
+  }
 
 document.addEventListener("DOMContentLoaded", function () {
   const headers = document.querySelectorAll(".filterable");

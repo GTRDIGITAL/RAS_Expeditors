@@ -1,9 +1,12 @@
 from flask import Blueprint, render_template, redirect, request, session, flash, url_for, jsonify
 from flask_login import login_user, login_required, logout_user, current_user
 from . import db
-from .utils import extract_name_from_email
+from datetime import datetime
+
+# from .utils import extract_name_from_email
 from .otp import generate_new_code
 from .mail import trimitereMail, trimitereOTPMail
+import utils
 from .database import get_all_users, get_user_from_db, update_user_in_db
 # from .stocareBD import *
 import mysql.connector
@@ -20,6 +23,11 @@ import redis  # Import the redis library
 import json
 from collections import defaultdict
 from .trimitereCodOTP import trimitereFilesMail
+def extract_name_from_email(email):
+    local_part = email.split('@')[0]
+    name_parts = local_part.replace('.', ' ').replace('-', ' ').split(' ')
+    formatted_name = ' '.join([part.capitalize() for part in name_parts])
+    return formatted_name
 
 
 # filepath: c:\Dezvoltare\RAS\RAS Expeditors\website\views.py
@@ -28,6 +36,7 @@ from dotenv import load_dotenv
 views = Blueprint('views', __name__)
 
 UPLOAD_FOLDER = 'C:\\Dezvoltare\\RAS\\RAS Expeditors\\uploads'  # Define the upload folder
+TEMP_FOLDER= 'D:\\Projects\\35. GIT RAS\\RAS_Expeditors\\temp'  # Define the temporary folder
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
@@ -463,6 +472,7 @@ def generate_reports_processing():
     user = get_user_from_db(email)
     users_list = get_all_users()
     fisier=None
+    nume_export=None
 
     if request.method == 'POST':
         start_date = request.form.get('start-date')  # format: '2025-06'
@@ -486,6 +496,7 @@ def generate_reports_processing():
                 
                     flash(mesaj, "success")
                     fisier=tb
+                    nume_export= f"Balanta_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
                 else:
                     flash(mesaj, "danger")# mesaj de succes
             except Exception as e:
@@ -494,37 +505,47 @@ def generate_reports_processing():
             
         elif action == 'fisa':
             # Generează Fișa de cont
+            nume_export= f"Fisa_cont_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
             return f"Generez fișa de cont de la {start_month}/{start_year} până la {end_month}/{end_year}" 
         elif action == 'gl':
             # Generează Fișa de cont
             gl,err= get_gl_period_from_db(start_month, start_year, end_month, end_year)
-            print(gl)
-            # fisier=gl
             if err==1:
                 flash("Nu există date pentru perioada selectată sau nu s-a putut realiza conexiunea la baza de date.", "danger")
-            else:
-                flash("GL afisat cu succes! Pentru download click export pe tabelul de mai jos.", "success")
+            print(gl)
+            gl_df= pd.DataFrame(gl)
+            gl_df.to_excel(os.path.join(TEMP_FOLDER, f"GL_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx"), index=False)
+            # gl.to_excel('D:\\Projects\\35. GIT RAS\\RAS_Expeditors\\temp\\REGISTRU JURNAL.xlsx', index=False)  # Salvează DataFrame-ul în Excel
+            gl_preview = gl[:100]
+            fisier=gl_preview
+            nume_export=f"GL_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
+            
+            
+            flash("GL afisat cu succes! Pentru download click export pe tabelul de mai jos.", "success")
                 
             # return f"Generez fișa de cont de la {start_month}/{start_year} până la {end_month}/{end_year}" 
         
 
     if code == cod:
-        return render_template('vizualizare_rapoarte.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id, fisier=fisier)
+        return render_template('vizualizare_rapoarte.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id, fisier=fisier, nume_export=nume_export)
     else:
         return render_template('auth.html')
 @views.route('/trimite-mail-export', methods=['POST'])
 def trimite_mail_export():
     if 'file' not in request.files:
         return jsonify(status="error", message="Fișier lipsă.")
-
+    email = session.get('email')
+    first_name = extract_name_from_email(email)
     file = request.files['file']
     filepath = os.path.join("temp", file.filename)
-    file.save(filepath)
+    if not "GL" in file.filename:
+        
+        file.save(filepath)
 
     # Apelezi funcția ta de trimitere email
-    from utils import trimitereFisierMail
+    
     try:
-        trimitereFisierMail(email=session["email"], fisier=filepath)
+        trimitereFilesMail(first_name,email, filepath)
         return jsonify(status="success")
     except Exception as e:
         return jsonify(status="error", message=str(e))
@@ -543,6 +564,7 @@ def generate_monthlyTB():
     tb_data=None
     luni_disponibile = get_balanta_months()
     print(luni_disponibile)
+    nume_export=None
     # luni_pe_ani = get_luni_pe_ani([f"{luna['Month']:02d} {luna['Year']}" for luna in luni_disponibile])
     
 
@@ -565,12 +587,15 @@ def generate_monthlyTB():
                 flash(mesaj, "success")  # mesaj de succes
                 tb_df = pd.DataFrame(tb)
                 tb_data = tb_df.to_dict(orient="records")
+                nume_export= f"Balanta_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
 
         # procesezi balanța pe perioadă
         else:
         # Checkbox nebifat
         # Preiei luna simplă
             luna = request.form.get('start-date')
+            start_date = datetime.strptime(str(luna), "%Y-%m")
+            luna_cifra = start_date.month  # întoarce un int: 6 pentru Iunie
             # procesezi balanța lunară
             start_date = request.form.get('start-date')  # format: '2025-06'
             end_date = start_date      # format: '2025-08'
@@ -641,9 +666,11 @@ def generate_monthlyTB():
     right_on='GL',   # cheia de join
                 how='left'  # păstrăm toate rândurile din tb_df, dacă nu găsește în tb_prev pune NaN
         )   
-            tb_df.loc[(tb_df["GL"].astype(str).str.startswith("6")) | (tb_df["GL"].astype(str).str.startswith("7")),"Ending_balance"]=0
-            tb_df.loc[(tb_df["GL"].astype(str).str.startswith("6")),"Ending_DC"]="D"
-            tb_df.loc[(tb_df["GL"].astype(str).str.startswith("7")),"Ending_DC"]="C"
+            print(luna_cifra)
+            if luna_cifra=="1":
+                tb_df.loc[(tb_df["GL"].astype(str).str.startswith("6")) | (tb_df["GL"].astype(str).str.startswith("7")),"Ending_balance"]=0
+                tb_df.loc[(tb_df["GL"].astype(str).str.startswith("6")),"Ending_DC"]="D"
+                tb_df.loc[(tb_df["GL"].astype(str).str.startswith("7")),"Ending_DC"]="C"
             tb_df = tb_df.rename(columns={
     "MTD Debit": "MTD_Debit",
     "MTD Credit": "MTD_Credit"
@@ -673,6 +700,7 @@ def generate_monthlyTB():
                 if tb_df[col].dropna().apply(lambda x: isinstance(x, (int, float, complex)) and not isinstance(x, bool)).all():
                     tb_df[col] = tb_df[col].fillna(0)
             print(tb_df)
+            
             if tb_df is None or tb_df.empty:
                 flash("Nu există date pentru perioada selectată sau nu s-a putut realiza conexiunea la baza de date.", "danger")
             else:
@@ -686,6 +714,7 @@ def generate_monthlyTB():
 
             err=insert_tb_df_to_db(tb_df)  # Inserăm DataFrame-ul în baza de date
             tb_data = tb_df.to_dict(orient="records")
+            nume_export= f"Balanta_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
             if err==0:
                 flash("Balanta lunara generata si importata in baza de date cu succes!", "success")
             else:
@@ -710,7 +739,7 @@ def generate_monthlyTB():
             
 
     if code == cod:
-        return render_template('monthly tb.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id, tb_data=tb_data, luni_disponibile=luni_disponibile)
+        return render_template('monthly tb.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id, tb_data=tb_data, luni_disponibile=luni_disponibile, nume_export=nume_export)
     else:
         return render_template('auth.html')
 
