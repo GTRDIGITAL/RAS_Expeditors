@@ -1,6 +1,10 @@
-from celery_app import celery
+from . import celery
+from .procedurasql import procedura_mapare
 
-@celery.task
-def run_mapping_task(gl_id):
-    from website.mapping import map_general_ledger
-    return map_general_ledger(gl_id)
+@celery.task(bind=True)
+def async_import_task(self, filepath):
+    try:
+        procedura_mapare()
+        return {'status': 'success'}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}

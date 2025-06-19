@@ -25,26 +25,6 @@ from .trimitereCodOTP import trimitereFilesMail
 # filepath: c:\Dezvoltare\RAS\RAS Expeditors\website\views.py
 from dotenv import load_dotenv
 
-load_dotenv()  # Load environment variables from .env
-REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
-celery = Celery('website', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
-
-celery.conf.update(
-    task_serializer='json',
-    result_serializer='json',
-    accept_content=['json'],
-    timezone='Europe/Bucharest',
-    enable_utc=False,
-    broker_pool_limit=None,
-    broker_connection_timeout=30,
-    broker_heartbeat=None,
-    broker_use_ssl=True,
-    broker_transport_options = {'ssl_cert_reqs': 'required'}, # Ensure SSL certificate verification
-    redis_socket_timeout=60  # Increase Redis connection timeout
-)
-
 views = Blueprint('views', __name__)
 
 UPLOAD_FOLDER = 'C:\\Dezvoltare\\RAS\\RAS Expeditors\\uploads'  # Define the upload folder
@@ -794,56 +774,30 @@ def generate_reports():
 
 @views.route('/upload_into_database', methods=['POST'])
 def upload_into_database():
-    print("suntem pe upload")
-    email = session.get('email')
-    first_name = extract_name_from_email(email)
-
-    cod = session.get('cod')
-    code = session.get('verified_code')
-
-    user = get_user_from_db(email)
-    users_list = get_all_users()
-
-    if request.method == 'POST':
-        # Get the list of files in the upload folder
-        files = os.listdir(UPLOAD_FOLDER)
-        print("avem fisiere aici")
-
-        # Check if there are any files in the directory
+    """
+    Rută pentru procesarea fișierului Excel în background
+    """
+    try:
+        # Verifică dacă există fișiere în director
+        files = os.listdir(Config.UPLOAD_FOLDER)
         if not files:
             return jsonify({'message': 'No files found in upload directory'}), 400
 
-        # Assuming you want to process the latest uploaded file
-        # You might want to add more sophisticated logic to determine the correct file
-        latest_file = max([os.path.join(UPLOAD_FOLDER, f) for f in files], key=os.path.getctime)
-
-        # Add Redis connection check here
-        try:
-            r = redis.Redis(
-                host='RedisBoxGT.redis.cache.windows.net',  # Replace with your Redis host
-                port=6380,  # Use the same port as redis_health_check.py
-                password=REDIS_PASSWORD,
-                ssl=True,  # Enable SSL
-                ssl_certfile=None,
-                ssl_keyfile=None,
-                ssl_cert_reqs='required'  # Verify the server's certificate
-            )
-            r.ping()
-            print("Successfully connected to Redis!") # Print success message
-            logger.info("Successfully connected to Redis!") # Log success message
-        except redis.exceptions.ConnectionError as e:
-            print(f"Failed to connect to Redis: {e}")
-            return jsonify({'message': f'Failed to connect to Redis: {str(e)}'}), 500
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            return jsonify({'message': f'An unexpected error occurred: {str(e)}'}), 500
-
-        try:
-            print("introducem in redis")
-            task = async_import_task.delay(latest_file)
-            print("a introdus in redis")
-            return jsonify({'message': 'File import started in the background.', 'task_id': task.id}), 202
-        except Exception as e:
-            return jsonify({'message': f'Error importing file: {str(e)}'}), 500
-
-    return jsonify({'message': 'Invalid request method'}), 400
+        # Ia cel mai recent fișier
+        latest_file = max(
+            [os.path.join(Config.UPLOAD_FOLDER, f) for f in files],
+            key=os.path.getctime
+        )
+        
+        # Pornește task-ul Celery
+        task = async_import_task.delay(latest_file)
+        logger.info(f"Started import task with ID: {task.id}")
+        
+        return jsonify({
+            'message': 'File import started in background',
+            'task_id': task.id
+        }), 202
+        
+    except Exception as e:
+        logger.error(f"Error in upload_into_database: {str(e)}")
+        return jsonify({'message': f'Error: {str(e)}'}), 500
