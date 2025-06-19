@@ -1,19 +1,26 @@
+from flask import Flask 
 from celery import Celery
+import ssl
 import os
 from dotenv import load_dotenv
-from flask import Flask
 
 load_dotenv()
 
-def create_celery(app=None):
-    app = app or Flask(__name__)
+def create_celery():
+    app = Flask(__name__)
     app.config.update(
-        broker_url=os.getenv('CELERY_BROKER_URL'),
-        result_backend=os.getenv('CELERY_RESULT_BACKEND')
+        CELERY_BROKER_URL=os.getenv('CELERY_BROKER_URL'),
+        CELERY_RESULT_BACKEND=os.getenv('CELERY_RESULT_BACKEND')  # Fix key name
     )
-    celery = Celery(app.import_name, broker=app.config['broker_url'], backend=app.config['result_backend'])
-    celery.conf.update(app.config)
-    celery.config_from_object("website.config.Config")
+    
+    celery = Celery(
+        'tasks',
+        broker=app.config['CELERY_BROKER_URL'],
+        backend=app.config['CELERY_RESULT_BACKEND']
+    )
+
+    celery.conf.broker_use_ssl = {'ssl_cert_reqs': ssl.CERT_NONE}
+    celery.conf.redis_backend_use_ssl = {'ssl_cert_reqs': ssl.CERT_NONE}
 
     return celery
 

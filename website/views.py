@@ -415,8 +415,8 @@ def delete_user(user_id):
         return jsonify({"error": f"Eroare stergere user: {str(e)}"}), 500
 
 UPLOAD_FOLDER = 'C:\\Dezvoltare\\RAS\\RAS Expeditors\\uploads'  # Define the upload folder
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+# if not os.path.exists(UPLOAD_FOLDER):
+#     os.makedirs(UPLOAD_FOLDER)
 
 @views.route('/load_transform', methods=['GET', 'POST'])
 # @login_required
