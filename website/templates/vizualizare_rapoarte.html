@@ -12,8 +12,96 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <style>
+      #dropdown-container {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    max-width: 600px;
+  }
+
+  /* Etichetele (label) mai vizibile */
+  #dropdown-container label {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 6px;
+    display: inline-block;
+    color: #343a40;
+  }
+
+  /* Spacing între cele două select-uri */
+  #dropdown-container select {
+    margin-bottom: 12px;
+  }
+
+  /* Select2 custom theme */
+  .select2-container--default .select2-selection--multiple {
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 4px 8px;
+    min-height: 42px;
+    background-color: #fff;
+    transition: all 0.2s ease;
+  }
+
+  .select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+
+  .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #0d6efd;
+    border: none;
+    color: #fff;
+    padding: 2px 8px;
+    margin-top: 4px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+
+  /* Placeholder color */
+  .select2-container--default .select2-selection--multiple .select2-search__field::placeholder {
+    color: #adb5bd;
+  }
+
+  /* Responsive */
+  @media (max-width: 576px) {
+    #dropdown-container {
+      padding: 15px;
+    }
+    #dropdown-container label {
+      font-size: 0.95rem;
+    }
+  }
+
+  #dropdown-container {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    max-width: 600px;
+  }
+
+  .form-check-label {
+    font-weight: 600;
+  }
+
+  .btn {
+    min-width: 180px;
+  }
+
+  .select2-selection__choice {
+    background-color: #0d6efd !important;
+    color: white !important;
+  }
+
+
     body {
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, rgb(0, 0, 0) 30%, rgba(114, 2, 2, 0.864) 50%, rgb(0, 0, 0) 60%);
@@ -401,7 +489,7 @@ input[type="checkbox"]:checked::after {
     </div>
   </nav>
 
-  <!-- Main Content --><form method="POST">
+  <!-- Main Content -->
   <div class="container mt-5 pt-5">
     <!-- Filters for period -->
 
@@ -426,7 +514,78 @@ input[type="checkbox"]:checked::after {
     <h4 class="text-black fw-bold mb-1">Generare Rapoarte Contabile</h4>
     <p class="text-muted">Selectează perioada și generează raportul dorit</p>
   </div>
+ <div id="dropdown-container" class="mt-4" style="display: none;">
+  <!-- Checkbox + Select cont 6 -->
+   <form method="POST" id="fisaForm">
+  <div class="form-check mb-3">
+  <div class="text-center mb-4">
+ <div class="d-inline-block px-4 py-2 rounded-3 border shadow-sm bg-light">
+      <span class="text-muted">Perioadă selectată:</span><br>
 
+      <input type="text" 
+             id="start-date-fisa" 
+             name="start-date" 
+             readonly 
+             class="border-0 bg-transparent text-dark fw-semibold text-center" 
+             style="width: 140px;" 
+             value="-">
+
+      <span class="mx-2 text-muted">→</span>
+
+      <input type="text" 
+             id="end-date-fisa" 
+             name="end-date" 
+             readonly 
+             class="border-0 bg-transparent text-dark fw-semibold text-center" 
+             style="width: 140px;" 
+             value="-">
+    </div>
+</div>
+
+
+    <input class="form-check-input" type="checkbox" value="" id="checkCont6">
+    <label class="form-check-label" for="checkCont6">Fișa Conturi de 6</label>
+  </div>
+  
+    
+  <div class="mb-3" id="selectCont6" style="display: none;">
+    <label for="conturi6">Conturi de 6:</label>
+    <select id="conturi6" name="conturi6[]" class="form-select" multiple>
+      <option value="select_all">🔘 Selectează toate</option>
+      {% for item in values_6 %}
+      <option value="{{ item.GL }}">{{ item.GL }}</option>
+    {% endfor %}
+    </select>
+  </div>
+
+  <!-- Checkbox + Select cont 7 -->
+  <div class="form-check mb-3">
+    
+    <input class="form-check-input" type="checkbox" value="" id="checkCont7">
+    <label class="form-check-label" for="checkCont7">Fișa Conturi de 7</label>
+  </div>
+  <div class="mb-3" id="selectCont7" style="display: none;">
+    <label for="conturi7">Conturi de 7:</label>
+    <select id="conturi7" name="conturi7[]" class="form-select" multiple>
+      <option value="select_all">🔘 Selectează toate</option>
+      {% for item in values_7 %}
+      <option value="{{ item.GL }}">{{ item.GL }}</option>
+    {% endfor %}
+    </select>
+  </div>
+
+  <!-- Butoane acțiune -->
+  <div class="d-flex gap-3 mt-4">
+    <button id="genereazaFisa" type="submit" class="btn btn-primary">
+      <i class="bi bi-play-circle"></i> Generează Fișa de Cont
+    </button>
+    <button id="cancelFisa" type="button" class="btn btn-outline-danger">
+      <i class="bi bi-x-circle"></i> Anulează
+    </button>
+  </div>
+</div>
+  </div>
+</form><form method="POST">
   <div class="row g-4">
     <div class="col-md-6 col-lg-4">
       <label for="start-date" class="form-label">Perioada de început</label>
@@ -436,22 +595,24 @@ input[type="checkbox"]:checked::after {
       <label for="end-date" class="form-label">Perioada de sfârșit</label>
       <input type="month" class="form-control form-control-lg rounded-3 shadow-sm" id="end-date" name="end-date" required>
     </div>
-  </div>
-
-  <hr class="my-4">
+     <hr class="my-4">
 
   <div class="d-flex flex-wrap gap-3">
     <button class="btn btn-outline-primary px-4 py-2 shadow-sm d-flex align-items-center gap-2" name="action" value="tb">
       <i class="bi bi-bar-chart-steps fs-5"></i> Balanța
     </button>
-    <button class="btn btn-outline-secondary px-4 py-2 shadow-sm d-flex align-items-center gap-2" name="action" value="fisa">
-      <i class="bi bi-journal-bookmark fs-5"></i> Fișa de Cont
-    </button>
+    <button id="btn-fisa" class="btn btn-outline-secondary px-4 py-2 shadow-sm d-flex align-items-center gap-2" name="action" value="fisa">
+    <i class="bi bi-journal-bookmark fs-5"></i> Fișa de Cont
+  </button>
     <button class="btn btn-outline-success px-4 py-2 shadow-sm d-flex align-items-center gap-2" name="action" value="gl">
       <i class="bi bi-diagram-3 fs-5"></i> GL Mapat
     </button>
   </div>
+  
 </div>
+
+
+
 
     <!-- Dummy Table with Filters -->
         <div class="card mt-4">
@@ -502,6 +663,8 @@ input[type="checkbox"]:checked::after {
 
 </div>
 </form>
+
+
   <!-- Footer -->
   
 
@@ -514,7 +677,106 @@ input[type="checkbox"]:checked::after {
 
   <!-- Custom JavaScript -->
 <script>
+const startInput = document.getElementById('start-date');        // input luna inițială (selector original)
+const endInput = document.getElementById('end-date');            // input luna finală (selector original)
 
+const displayStart = document.getElementById('start-date-fisa'); // input readonly vizibil
+const displayEnd = document.getElementById('end-date-fisa');     // input readonly vizibil
+
+function updateDateFields() {
+  const start = startInput.value;
+  const end = endInput.value;
+
+  displayStart.value = start || '-';
+  displayEnd.value = end || '-';
+}
+
+// ascultă modificări pe selectorii originali
+startInput.addEventListener('input', updateDateFields);
+endInput.addEventListener('input', updateDateFields);
+
+  $(document).ready(function () {
+    function initSelectWithSelectAll(selector) {
+      $(selector).select2({
+        placeholder: "Selectează conturi",
+        allowClear: true,
+        width: '100%'
+      });
+
+      $(selector).on('select2:select', function (e) {
+        if (e.params.data.id === 'select_all') {
+          let allOptions = $(selector).find('option').not('[value="select_all"]');
+          allOptions.prop('selected', true);
+          $(selector).val(allOptions.map(function () {
+            return this.value;
+          }).get()).trigger('change');
+        }
+      });
+    }
+
+    initSelectWithSelectAll('#conturi6');
+    initSelectWithSelectAll('#conturi7');
+
+    $('#btn-fisa').on('click', function (e) {
+      e.preventDefault();
+      $('#dropdown-container').slideDown();
+    });
+
+    $('#checkCont6').on('change', function () {
+      $('#selectCont6').toggle(this.checked);
+      if (!this.checked) {
+        $('#conturi6').val(null).trigger('change');
+      }
+    });
+
+    $('#checkCont7').on('change', function () {
+      $('#selectCont7').toggle(this.checked);
+      if (!this.checked) {
+        $('#conturi7').val(null).trigger('change');
+      }
+    });
+
+    // 🔄 Buton "Anulează" — resetează tot
+    $('#cancelFisa').on('click', function () {
+      $('#checkCont6, #checkCont7').prop('checked', false);
+      $('#conturi6, #conturi7').val(null).trigger('change');
+      $('#selectCont6, #selectCont7').hide();
+      $('#dropdown-container').slideUp();
+    });
+
+    // ✅ Buton "Generează Fișa de Cont" — exemplu simplu
+    // $('#genereazaFisa').on('click', function () {
+    //   const c6 = $('#conturi6').val() || [];
+    //   const c7 = $('#conturi7').val() || [];
+
+    //   if (!c6.length && !c7.length) {
+    //     alert("Selectează cel puțin un cont pentru a genera fișa.");
+    //   } else {
+    //     alert("Generare fișă pentru:\nConturi 6: " + c6.join(', ') + "\nConturi 7: " + c7.join(', '));
+    //     // Aici poți face submit, ajax, etc.
+    //   }
+    // });
+  });
+
+document.getElementById('fisaForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // oprește submitul clasic
+
+    const formData = new FormData(this);
+
+    fetch("{{ url_for('views.genereaza_fisa') }}", {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.json()) // sau .text() dacă serverul returnează altceva
+    .then(data => {
+        console.log('Răspuns de la server:', data);
+        // Redirect la pagina dorită (poți schimba URL-ul cu ce vrei)
+        window.location.href = "{{ url_for('views.generate_reports_processing') }}";
+    })
+    .catch(error => {
+        console.error('Eroare:', error);
+    });
+});
 
 function exportTableToExcel(tableID, filename = 'export') {
     const table = document.getElementById(tableID);

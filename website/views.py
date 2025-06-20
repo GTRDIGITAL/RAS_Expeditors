@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, request, session, flash,
 from flask_login import login_user, login_required, logout_user, current_user
 from . import db
 from datetime import datetime
+import zipfile
 
 # from .utils import extract_name_from_email
 from .otp import generate_new_code
@@ -23,6 +24,9 @@ import redis  # Import the redis library
 import json
 from collections import defaultdict
 from .trimitereCodOTP import trimitereFilesMail
+
+from .tasks import *
+from .config import *
 def extract_name_from_email(email):
     local_part = email.split('@')[0]
     name_parts = local_part.replace('.', ' ').replace('-', ' ').split(' ')
@@ -35,7 +39,7 @@ from dotenv import load_dotenv
 
 views = Blueprint('views', __name__)
 
-UPLOAD_FOLDER = 'C:\\Dezvoltare\\RAS\\RAS Expeditors\\uploads'  # Define the upload folder
+UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
 TEMP_FOLDER= 'D:\\Projects\\35. GIT RAS\\RAS_Expeditors\\temp'  # Define the temporary folder
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -118,6 +122,34 @@ def get_gl_from_db(startMonth, startYear, endMonth, endYear):
     
 
     return gl 
+def get_cont_tb_from_db(cont):
+    connection = mysql.connector.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT DISTINCT GL
+        FROM balanta_conturi
+        WHERE GL LIKE %s
+        ORDER BY GL
+    """
+
+    # Extrage prima cifră din `cont` și formează patternul pentru LIKE
+    prima_cifra = str(cont)[0]
+    like_pattern = f"{prima_cifra}%"
+
+    cursor.execute(query, (like_pattern,))
+    fisa_values = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return fisa_values
+
 def get_balanta_months():
     from collections import defaultdict
     from datetime import datetime
@@ -284,6 +316,39 @@ def get_gl_period_from_db(startMonth, startYear, endMonth, endYear):
   
 
     return gl, err 
+def get_fisa_cont_period_from_db(startMonth, startYear, endMonth, endYear, cont):
+    connection = mysql.connector.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+    cursor = connection.cursor(dictionary=True)  # Rezultatul va fi un dicționar
+    err = 0
+
+    query = """
+        SELECT * 
+        FROM general_ledger
+        WHERE (Year * 100 + Month) BETWEEN %s AND %s
+          AND Statutory_GL = %s
+        ORDER BY Year, Month
+    """
+    start_key = startYear * 100 + startMonth
+    end_key = endYear * 100 + endMonth
+    try:
+        cursor.execute(query, (start_key, end_key, cont))
+        gl = cursor.fetchall()
+    except Exception as e:
+        print("Eroare la interogare:", e)
+        connection.rollback()
+        err = 1
+        gl = []
+    finally:
+        cursor.close()
+        connection.close()
+
+    return gl, err
+
 def insert_tb_df_to_db(tb_df):
     connection = mysql.connector.connect(
         host=mysql_config['host'],
@@ -414,7 +479,7 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({"error": f"Eroare stergere user: {str(e)}"}), 500
 
-UPLOAD_FOLDER = 'C:\\Dezvoltare\\RAS\\RAS Expeditors\\uploads'  # Define the upload folder
+UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
 # if not os.path.exists(UPLOAD_FOLDER):
 #     os.makedirs(UPLOAD_FOLDER)
 
@@ -459,6 +524,69 @@ def load_transform():
         return render_template('load_transform.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id)
     else:
         return render_template('auth.html')
+    
+@views.route('/genereaza_fisa', methods=['POST'])
+def genereaza_fisa():
+    conturi6 = request.form.getlist('conturi6[]')
+    conturi7 = request.form.getlist('conturi7[]')
+
+    start_date = request.form.get('start-date')   # din input name="start-date"
+    end_date = request.form.get('end-date')       # din input name="end-date"
+    start_year, start_month = map(int, start_date.split('-'))
+    end_year, end_month = map(int, end_date.split('-'))
+    email = session.get('email')
+    first_name = extract_name_from_email(email)
+
+    print("Conturi 6 selectate:", conturi6)
+    print("Conturi 7 selectate:", conturi7)
+    print("Perioada selectată:", start_date, "→", end_date)
+    rezultate = []
+    atasamente = []
+
+    # Dacă lista conturi6 nu e goală
+    if conturi6 and not ('select_all' in conturi6):
+        for cont in conturi6:
+            rezultat,err = get_fisa_cont_period_from_db(start_month, start_year, end_month, end_year, cont)
+            print(rezultat)
+            if rezultat == ([], 0)or rezultat==[]:   
+                flash(f"Nu există date pentru contul {cont} în perioada selectată.", "warning")
+                
+            else:
+                rezultat_df= pd.DataFrame(rezultat)
+                fisier_path = os.path.join(TEMP_FOLDER, f"Fisa_cont_{cont}_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx")
+                rezultat_df.to_excel(fisier_path, index=False)
+                atasamente.append(fisier_path)
+                flash(f"Fișa pentru contul {cont} a fost generată cu succes! Veti primi rezulatul pe e-mail!", "success")
+                
+
+    # La fel pentru conturi7
+    if conturi7 and not ('select_all' in conturi7):
+        for cont in conturi7:
+            rezultat,err = get_fisa_cont_period_from_db(start_month, start_year, end_month, end_year, cont)
+            print(rezultat,"----------")
+            if rezultat == ([], 0) or rezultat==[]:   
+                flash(f"Nu există date pentru contul {cont} în perioada selectată.", "warning")
+                
+            else:
+                fisier_path = os.path.join(TEMP_FOLDER, f"Fisa_cont_{cont}_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx")
+                rezultat_df = pd.DataFrame(rezultat)
+                rezultat_df.to_excel(fisier_path, index=False)
+                atasamente.append(fisier_path)
+                
+                flash(f"Fișa pentru contul {cont} a fost generată cu succes! Veti primi rezulatul pe e-mail!", "success")
+    # print("Rezultate extrase din baza:", rezultate)
+    if atasamente:
+        
+        zip_path = os.path.join(TEMP_FOLDER, "fise_conturi_selectate.zip")
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for file_path in atasamente:
+                zipf.write(file_path, arcname=os.path.basename(file_path))
+            
+        trimitereFilesMail(first_name,email, zip_path)
+    return jsonify({'status': 'success'})
+    # return redirect(url_for('views.generate_reports_processing'))  # Redirect to the report generation page
+    # Aici poți procesa mai departe, returna pagină, genera PDF, etc.
+    return "Fișa generată! Verifică consola serverului pentru output."
 @views.route('/generate_reports', methods=['GET', 'POST'])
 # @login_required
 # @admin_required
@@ -468,7 +596,8 @@ def generate_reports_processing():
 
     cod = session.get('cod')
     code = session.get('verified_code')
-
+    values_6= get_cont_tb_from_db("6")
+    values_7= get_cont_tb_from_db("7")
     user = get_user_from_db(email)
     users_list = get_all_users()
     fisier=None
@@ -478,6 +607,8 @@ def generate_reports_processing():
         start_date = request.form.get('start-date')  # format: '2025-06'
         end_date = request.form.get('end-date')      # format: '2025-08'
         action = request.form.get('action')          # 'tb' sau 'fisa'
+        values_6= get_cont_tb_from_db("6")
+        values_7= get_cont_tb_from_db("7")
         if not start_date or not end_date:
             flash("Te rugăm să selectezi atât perioada de început, cât și cea de sfârșit.", "warning")
             print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
@@ -506,13 +637,16 @@ def generate_reports_processing():
         elif action == 'fisa':
             # Generează Fișa de cont
             nume_export= f"Fisa_cont_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
-            return f"Generez fișa de cont de la {start_month}/{start_year} până la {end_month}/{end_year}" 
+            values_6= get_cont_tb_from_db("6")
+            values_7= get_cont_tb_from_db("7")
+            
+            # return f"Generez fișa de cont de la {start_month}/{start_year} până la {end_month}/{end_year}" 
         elif action == 'gl':
             # Generează Fișa de cont
             gl,err= get_gl_period_from_db(start_month, start_year, end_month, end_year)
             if err==1:
                 flash("Nu există date pentru perioada selectată sau nu s-a putut realiza conexiunea la baza de date.", "danger")
-            print(gl)
+            # print(gl)
             gl_df= pd.DataFrame(gl)
             gl_df.to_excel(os.path.join(TEMP_FOLDER, f"GL_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx"), index=False)
             # gl.to_excel('D:\\Projects\\35. GIT RAS\\RAS_Expeditors\\temp\\REGISTRU JURNAL.xlsx', index=False)  # Salvează DataFrame-ul în Excel
@@ -527,7 +661,7 @@ def generate_reports_processing():
         
 
     if code == cod:
-        return render_template('vizualizare_rapoarte.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id, fisier=fisier, nume_export=nume_export)
+        return render_template('vizualizare_rapoarte.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id, fisier=fisier, nume_export=nume_export, values_6=values_6, values_7=values_7)
     else:
         return render_template('auth.html')
 @views.route('/trimite-mail-export', methods=['POST'])
@@ -642,7 +776,7 @@ def generate_monthlyTB():
             gl_df= pd.DataFrame(gl)
             tb_prev= pd.DataFrame(tb_prev)
             gl_df['D/C'] = gl_df['Amount'].apply(lambda x: 'D' if x > 0 else 'C')
-            print(gl_df)
+            # print(gl_df)
             gl_df['AbsAmount'] = gl_df['Amount'].abs()
 
 # Pivot cu Month, Year, Br, GL ca index
@@ -763,32 +897,54 @@ def generate_reports():
     else:
         return render_template('auth.html')
 
+
+    
 @views.route('/upload_into_database', methods=['POST'])
 def upload_into_database():
-    """
-    Rută pentru procesarea fișierului Excel în background
-    """
+    """Rută pentru procesarea fișierului Excel în background"""
     try:
-        # Verifică dacă există fișiere în director
         files = os.listdir(Config.UPLOAD_FOLDER)
         if not files:
             return jsonify({'message': 'No files found in upload directory'}), 400
-
-        # Ia cel mai recent fișier
+ 
         latest_file = max(
             [os.path.join(Config.UPLOAD_FOLDER, f) for f in files],
             key=os.path.getctime
         )
-        
-        # Pornește task-ul Celery
-        task = async_import_task.delay(latest_file)
+       
+        # Pornește task-ul de import
+        task = import_gl_task.delay(latest_file)
+       
+        print(f"Task ID: {task.id}")  # Pentru debug în consolă
         logger.info(f"Started import task with ID: {task.id}")
-        
+       
         return jsonify({
             'message': 'File import started in background',
             'task_id': task.id
         }), 202
-        
+       
     except Exception as e:
         logger.error(f"Error in upload_into_database: {str(e)}")
         return jsonify({'message': f'Error: {str(e)}'}), 500
+   
+@views.route('/task_status/<task_id>')
+def task_status(task_id):
+    """Verifică statusul unui task Celery"""
+    task = import_gl_task.AsyncResult(task_id)
+   
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'status': 'Task is pending...'
+        }
+    elif task.state == 'SUCCESS':
+        response = {
+            'state': task.state,
+            'result': task.result
+        }
+    else:
+        response = {
+            'state': task.state,
+            'status': str(task.info)
+        }
+    return jsonify(response)
