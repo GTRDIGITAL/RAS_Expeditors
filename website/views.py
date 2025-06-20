@@ -40,6 +40,7 @@ from dotenv import load_dotenv
 views = Blueprint('views', __name__)
 
 UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
+UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
 TEMP_FOLDER= 'D:\\Projects\\35. GIT RAS\\RAS_Expeditors\\temp'  # Define the temporary folder
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -480,6 +481,7 @@ def delete_user(user_id):
         return jsonify({"error": f"Eroare stergere user: {str(e)}"}), 500
 
 UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
+UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
 # if not os.path.exists(UPLOAD_FOLDER):
 #     os.makedirs(UPLOAD_FOLDER)
 
@@ -901,6 +903,7 @@ def generate_reports():
     
 @views.route('/upload_into_database', methods=['POST'])
 def upload_into_database():
+    """Rută pentru procesarea fișierului Excel în background"""
     """Rută pentru procesarea fișierului Excel în background"""
     try:
         files = os.listdir(Config.UPLOAD_FOLDER)

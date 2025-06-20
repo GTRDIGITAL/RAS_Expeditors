@@ -27,10 +27,21 @@ def create_celery():
 celery = create_celery()
 
 @celery.task(bind=True)
-def async_import_task(self, filepath):
+def import_gl_task(self, filepath):
+    """Task pentru importul fișierului GL"""
     try:
-        from .procedurasql import procedura_mapare
-        procedura_mapare()
-        return {'status': 'success'}
+        from .insert_GL import import_into_db
+        result = import_into_db(filepath)
+        
+        if result.get('status') == 'success':
+            # După import, pornește maparea
+            from .procedurasql import procedura_mapare
+            # procedura_mapare()
+            
+        return result
     except Exception as e:
-        return {'status': 'error', 'message': str(e)}
+        print(f"Task error: {str(e)}")
+        return {
+            'status': 'error',
+            'message': str(e)
+        }

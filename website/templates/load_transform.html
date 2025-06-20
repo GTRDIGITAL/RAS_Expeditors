@@ -840,8 +840,34 @@ input[type="checkbox"]:checked::after {
 </div>
 
 
-  
+  <div id="importStatus">IMPORT STATUS</div>
   <script>
+
+    function checkTaskStatus(taskId) {
+    fetch(`/task_status/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Task status:', data);
+            let statusElement = document.getElementById('importStatus');
+            
+            if (data.state === 'SUCCESS') {
+                if (data.result.status === 'success') {
+                    statusElement.textContent = `Import completed successfully! ${data.result.message}`;
+                } else {
+                    statusElement.textContent = `Import failed: ${data.result.message}`;
+                }
+            } else if (data.state === 'PENDING') {
+                statusElement.textContent = 'Import in progress...';
+                setTimeout(() => checkTaskStatus(taskId), 2000);
+            } else {
+                statusElement.textContent = `Import failed: ${data.status}`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('importStatus').textContent = 'Error checking import status';
+        });
+}
 
   document.addEventListener('DOMContentLoaded', function() {
     const uploadButton = document.getElementById('uploadButton');
@@ -888,72 +914,57 @@ input[type="checkbox"]:checked::after {
         uploadProgressBar.textContent = '0%';
         uploadProgressBar.setAttribute('aria-valuenow', 0);
 
-        // Upload progress event (optional, for actual upload progress if possible)
+        // Upload progress event (doar progres local, nu confirmă succesul pe server)
         xhr.upload.addEventListener("progress", function(event) {
             if (event.lengthComputable) {
                 const percentComplete = (event.loaded / event.total) * 100;
-                uploadProgressBar.style.width = percentComplete + '%';
-                uploadProgressBar.textContent = percentComplete + '%';
-                uploadProgressBar.setAttribute('aria-valuenow', percentComplete);
+                // Bara se umple doar până la 99% până avem confirmarea de la server
+                const safePercent = percentComplete >= 100 ? 99 : percentComplete;
+                uploadProgressBar.style.width = safePercent + '%';
+                uploadProgressBar.textContent = Math.floor(safePercent) + '%';
+                uploadProgressBar.setAttribute('aria-valuenow', safePercent);
             }
         });
 
         // Request finished event
-       xhr.addEventListener("load", function() {
-    if (xhr.status === 200) {
-        // Request successful
-        const data = JSON.parse(xhr.responseText);
-        console.log('Server response:', data);
-
-        // Set progress bar to 100%
-        uploadProgressBar.style.width = '100%';
-        uploadProgressBar.textContent = '100%';
-        uploadProgressBar.setAttribute('aria-valuenow', 100);
-
-        uploadSuccessful = true;
-        uploadButton.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Uploaded';
-        uploadButton.disabled = false;
-
-        // Enable the import button
-        //importButton.removeAttribute("disabled"); //remove disabled
-        //importButton.style.cursor = "pointer"; //remove disabled
-        //importButton.classList.remove("disabled"); //remove disabled
-    } else {
-        // Request failed
-        alert('File upload failed.');
-        console.error('Error:', xhr.status);
-
-        uploadSuccessful = false;
-        uploadButton.innerHTML = 'Upload file';
-        //importButton.disabled = true; // Disable the import button //remove disabled
-
-        // Reset progress bar on failure
-        uploadProgressBar.style.width = '0%';
-        uploadProgressBar.textContent = '0%';
-        uploadProgressBar.setAttribute('aria-valuenow', 0);
-    }
-});
+        xhr.addEventListener("load", function() {
+            if (xhr.status === 200) {
+                // Request successful
+                uploadProgressBar.style.width = '100%';
+                uploadProgressBar.textContent = '100%';
+                uploadProgressBar.setAttribute('aria-valuenow', 100);
+                uploadSuccessful = true;
+                uploadButton.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Uploaded';
+                uploadButton.disabled = false;
+            } else {
+                // Request failed
+                uploadProgressBar.style.width = '0%';
+                uploadProgressBar.textContent = '0%';
+                uploadProgressBar.setAttribute('aria-valuenow', 0);
+                let errorMsg = 'File upload failed.';
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.message) errorMsg += '\n' + data.message;
+                } catch (e) {}
+                alert(errorMsg);
+                uploadSuccessful = false;
+                uploadButton.innerHTML = 'Upload file';
+            }
+        });
 
         // Request error event
         xhr.addEventListener("error", function() {
-            alert('File upload failed.');
-            console.error('Error during the upload.');
-
-            uploadSuccessful = false;
-            uploadButton.innerHTML = 'Upload file';
-            //importButton.disabled = true; // Disable the import button //remove disabled
-
-            // Reset progress bar on error
             uploadProgressBar.style.width = '0%';
             uploadProgressBar.textContent = '0%';
             uploadProgressBar.setAttribute('aria-valuenow', 0);
+            alert('File upload failed (network error).');
+            uploadSuccessful = false;
+            uploadButton.innerHTML = 'Upload file';
         });
 
         xhr.send(formData);
     } else {
         alert('Please select a file.');
-
-        // Reset progress bar if no file selected
         uploadProgressBar.style.width = '0%';
         uploadProgressBar.textContent = '0%';
         uploadProgressBar.setAttribute('aria-valuenow', 0);
@@ -961,38 +972,48 @@ input[type="checkbox"]:checked::after {
 });
     importButton.addEventListener('click', function(event) {
         event.preventDefault(); // Prevent default form submission
+        importButton.disabled = true; // dezactivează butonul imediat
 
         // Send request to import data
         const xhrImport = new XMLHttpRequest();
         xhrImport.open('POST', '/upload_into_database', true);
 
         xhrImport.addEventListener("load", function() {
-            if (xhrImport.status === 200) {
-                // Import successful
+            if (xhrImport.status === 200 || xhrImport.status === 202) {
+                // Import successful, get task_id and start polling status
                 const data = JSON.parse(xhrImport.responseText);
-                console.log('Import response:', data);
-                alert('File imported successfully!');
+                if (data.task_id) {
+                    document.getElementById('importStatus').textContent = 'Import started...';
+                    checkTaskStatus(data.task_id);
+                } else {
+                    document.getElementById('importStatus').textContent = data.message || 'Import started, but no task_id returned.';
+                }
             } else {
                 // Import failed
-                alert('File import faileee.');
+                alert('File import failed.');
                 console.error('Error:', xhrImport.status);
+                importButton.disabled = false; // re-enable if error
             }
         });
 
-        /*xhrImport.addEventListener("error", function() {
+        xhrImport.addEventListener("error", function() {
             alert('File import failed.');
             console.error('Error during the import.');
-        });*/
+            importButton.disabled = false; // re-enable if error
+        });
 
         xhrImport.send(); // No data needs to be sent, as the file is already on the server
     });
 
-    document.getElementById('sectionNav').addEventListener('change', function() {
-      const section = document.getElementById(this.value);
-      if (section) {
-        window.scrollTo({ top: section.offsetTop - 80, behavior: 'smooth' });
-      }
-    });
+    const sectionNav = document.getElementById('sectionNav');
+    if (sectionNav) {
+      sectionNav.addEventListener('change', function() {
+        const section = document.getElementById(this.value);
+        if (section) {
+          window.scrollTo({ top: section.offsetTop - 80, behavior: 'smooth' });
+        }
+      });
+    }
   });
   </script>
   <!-- Footer -->
