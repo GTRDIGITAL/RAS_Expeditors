@@ -39,8 +39,11 @@ from dotenv import load_dotenv
 
 views = Blueprint('views', __name__)
 
-UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
-UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
+UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'uploads'))  # Define the upload folder
+print(f"UPLOAD_FOLDER: {UPLOAD_FOLDER}")
+print(f"Current working directory: {os.getcwd()}")
+print(f"Files in upload folder: {os.listdir(UPLOAD_FOLDER)}")
+
 TEMP_FOLDER= 'D:\\Projects\\35. GIT RAS\\RAS_Expeditors\\temp'  # Define the temporary folder
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -917,6 +920,16 @@ def upload_into_database():
        
         # Pornește task-ul de import
         task = import_gl_task.delay(latest_file)
+
+        connection = mysql.connector.connect(**mysql_config)
+        cursor = connection.cursor()
+        cursor.execute(
+            "INSERT INTO celery_tasks (task_id, start_time, status) VALUES (%s, NOW(), %s)",
+            (task.id, 'PENDING')
+        )
+        connection.commit()
+        cursor.close()
+        connection.close()
        
         print(f"Task ID: {task.id}")  # Pentru debug în consolă
         logger.info(f"Started import task with ID: {task.id}")
@@ -951,3 +964,29 @@ def task_status(task_id):
             'status': str(task.info)
         }
     return jsonify(response)
+
+@views.route('/start_mapare_gl', methods=['POST'])
+def start_mapare_gl():
+    try:
+        task = mapare_gl_task.delay()
+
+        connection = mysql.connector.connect(**mysql_config)
+        cursor = connection.cursor()
+        cursor.execute(
+            "INSERT INTO celery_tasks (task_id, start_time, status) VALUES (%s, NOW(), %s)",
+            (task.id, 'PENDING')
+        )
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+        return jsonify({'message': 'Mapare GL pornită în background', 'task_id': task.id}), 202
+    except Exception as e:
+        return jsonify({'message': f'Error: {str(e)}'}), 500
+
+
+@views.route('/stop_task/<task_id>', methods=['POST'])
+def stop_task(task_id):
+    celery.control.revoke(task_id, terminate=True)
+    # Poți updata și statusul în DB dacă vrei
+    return jsonify({'message': f'Task {task_id} a fost oprit.'}) 
