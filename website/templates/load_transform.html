@@ -11,6 +11,22 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- DataTables CSS & JS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+
 
   <style>
     body {
@@ -26,6 +42,27 @@
     .navbar {
       background-color: #000;
     }
+      div.dt-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  .dt-button {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .dt-button:hover {
+    background-color: #0b5ed7;
+  }
 
     .navbar-brand {
       color: #fff;
@@ -506,6 +543,75 @@ input[type="checkbox"]:checked::after {
         h5{
           color:white;
         }
+          #historySidebar {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 140px;
+    background: #0d6efd; /* bootstrap primary */
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.3s ease;
+    overflow: hidden;
+    z-index: 1050;
+    box-shadow: 0 0 5px rgba(0,0,0,0.15);
+  }
+
+  /* Când e extins */
+  #historySidebar.expanded {
+    width: 320px;
+    height: 500px;
+    border-radius: 0 8px 8px 0;
+    background: white;
+    color: #212529;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+  }
+
+  /* Text și icon din sidebar */
+  #historySidebar .sidebar-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-weight: 600;
+    font-size: 1rem;
+    user-select: none;
+  }
+
+  #historySidebar.expanded .sidebar-label {
+    writing-mode: horizontal-tb;
+    margin: 10px 0;
+    color: #0d6efd;
+    font-weight: 700;
+  }
+
+  /* Container conținut când extins */
+  #historyContent {
+    display: none;
+    padding: 0 15px 15px 15px;
+    overflow-y: auto;
+    height: 100%;
+  }
+
+  #historySidebar.expanded #historyContent {
+    display: block;
+  }
+
+  /* Buton închidere */
+  #closeHistoryBtn {
+    cursor: pointer;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #0d6efd;
+    text-align: right;
+    user-select: none;
+  }
   </style>
 </head>
 <body>
@@ -561,6 +667,56 @@ input[type="checkbox"]:checked::after {
     </div>
   </nav>
 
+<div id="historySidebar" title="Istoric documente">
+  <div class="sidebar-label">
+   History
+  </div>
+  <div id="historyContent">
+    <div id="closeHistoryBtn">&times;</div>
+
+    {% macro accordion_history(title, icon, data, empty_msg, accordion_id) %}
+      <div class="card mt-3">
+        <div class="card-header bg-dark text-white d-flex align-items-center">
+          <i class="bi {{ icon }} me-1"></i> {{ title }}
+        </div>
+        <div class="card-body p-2">
+          {% if data %}
+            <div class="accordion" id="{{ accordion_id }}">
+              {% for an, luni in data.items() %}
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="heading-{{ accordion_id }}-{{ an }}">
+                    <button class="accordion-button collapsed py-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ accordion_id }}-{{ an }}" aria-expanded="false" aria-controls="collapse-{{ accordion_id }}-{{ an }}">
+                      {{ an }}
+                    </button>
+                  </h2>
+                  <div id="collapse-{{ accordion_id }}-{{ an }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ accordion_id }}-{{ an }}">
+                    <div class="accordion-body p-2">
+                      <ul class="list-group list-group-flush small">
+                        {% for luna in luni %}
+                          <li class="list-group-item d-flex align-items-center py-1">
+                            <i class="bi bi-calendar3 me-2 text-primary"></i> {{ luna }}
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted small mb-0">{{ empty_msg }}</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endmacro %}
+
+    {{ accordion_history('Istoric Balanțe Disponibile', 'bi-clock-history', luni_disponibile, 'Nu există balanțe înregistrate în sistem.', 'balantaAccordion') }}
+
+    {{ accordion_history('Istoric GL Disponibile', 'bi-clock-history', luni_disponibile_gl, 'Nu există registre jurnale înregistrate în sistem.', 'glAccordion') }}
+
+  </div>
+</div>
+
 
   <div class="container">
    
@@ -575,6 +731,9 @@ input[type="checkbox"]:checked::after {
           <div class="nav-links">
             <a href="javascript:void(0);" onclick="toggleSection('manual-import')" class="btn btn-outline-success">Manual import</a>
             <a href="javascript:void(0);" onclick="toggleSection('periode-mapping')" class="btn btn-outline-primary">Mapare GL prin Perioadă</a>
+            <a href="javascript:void(0);" onclick="toggleSection('cl')" class="btn btn-outline-primary">Generare sold clienti</a>
+            <a href="javascript:void(0);" onclick="toggleSection('sup')" class="btn btn-outline-primary">Generare sold furnizori</a>
+            <a href="javascript:void(0);" onclick="toggleSection('map')" class="btn btn-outline-primary">Vizualizare Mapare</a>
             
             <a href="javascript:void(0);" onclick="toggleSection('add-entry')" class="btn btn-outline-warning">Adăugare Notă Contabilă</a>
             <a href="javascript:void(0);" onclick="toggleSection('show-all')" class="btn btn-outline-warning">Istoric si editare note contabile</a>
@@ -623,17 +782,39 @@ input[type="checkbox"]:checked::after {
     cursor: not-allowed;
 }
     </style>
-    
+    <!-- Clienti -->
+    <div class="card mb-4" id="cl" style="display:none;">
+      <div class="card-header">Generare sold clienti</div>
+      <div class="card-body">
+          <label class="label" for="periodeInputClienti">Introduceți perioada:</label>
+          <input type="month" id="periodeInputClienti" class="form-control" placeholder="YYYY-MM">
+          <button class="btn btn-primary mt-2" id="soldCLButton">Generare sold clienti</button>
+      </div>
+      </div>
+
+
+    <!-- Furnizori -->
+ <div class="card mb-4" id="sup" style="display:none;">
+      <div class="card-header">Generare sold furnizori</div>
+      <div class="card-body">
+          <label class="label" for="periodeInputFurnizori">Introduceți perioada:</label>
+          <input type="month" id="periodeInputFurnizori" class="form-control" placeholder="YYYY-MM">
+          <button class="btn btn-primary mt-2" id="soldFzButton">Generare sold furnizori</button>
+      </div>
+      </div>
+
+
 
     <!-- Secțiunea 1: Introducere Perioadă și Mapare GL -->
     <div class="card mb-4" id="periode-mapping" style="display:none;">
       <div class="card-header">Mapare GL prin Perioadă</div>
-      div class="card-body">
+      <div class="card-body">
           <label class="label" for="periodeInput">Introduceți perioada:</label>
           <input type="month" id="periodeInput" class="form-control" placeholder="YYYY-MM">
           <button class="btn btn-primary mt-2" id="mapareGLButton">Mapare GL</button>
       </div>
-  </div>
+      </div>
+  
   <div class="card mb-4" id="show-all" style="display:none;">
     <div class="card-header">Istoric Note Contabile</div>
     <div class="card-body">
@@ -663,7 +844,9 @@ input[type="checkbox"]:checked::after {
     </div>
   </div>
 
-  
+
+
+
   <!-- Secțiunea 2: Import Manual Excel -->
   <div class="card mb-4" id="manual-import" style="display:none;">
     <div class="card-header">Manual Import for Mapping</div>
@@ -684,6 +867,45 @@ input[type="checkbox"]:checked::after {
 </div>
 </div>
   
+  <div class="card mb-4" id="map" style="display:none;">
+  <div class="card-header">Vizualizare mapare</div>
+  <div class="card-body">
+    <div id="map-section" class="mt-3">
+      <div class="d-flex justify-content-end mb-3">
+  <button class="btn btn-secondary" id="addRowBtn">➕ Adaugă rând</button>
+</div>
+        <div class="table-responsive">
+  <table id="map-table" class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        {% for col in map_df[0].keys() %}
+          <th>{{ col }}</th>
+        {% endfor %}
+        <th>Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in map_df %}
+        <tr data-id="{{ row['ID'] }}">
+          {% for key in map_df[0].keys() %}
+            <td contenteditable="{{ 'false' if key == 'ID' else 'true' }}">{{ row[key] }}</td>
+          {% endfor %}
+          <!-- <td>
+            <button class="btn btn-success btn-sm" onclick="editRow(this)">Salvează</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteRow(this)">Șterge</button>
+          </td> -->
+           <td>
+        <button class="btn btn-outline-danger btn-sm" onclick="deleteRow(this)">Șterge</button>
+      </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <button class="btn btn-secondary mt-3" onclick="addEmptyRow()">Adaugă rând</button>
+</div>
+  </div>
+</div>
+</div>
   <!-- Secțiunea 3: Adăugare Notă Contabilă -->
   <div class="card mb-4"  id="add-entry" style="display:none;">
     <div class="card-header">Adăugare Notă Contabilă</div>
@@ -840,7 +1062,7 @@ input[type="checkbox"]:checked::after {
 </div>
 
 
-  <div id="importStatus">IMPORT STATUS</div>
+  <div id="importStatus" style="display: none;">IMPORT STATUS</div>
   <script>
 
 document.getElementById('mapareGLButton').addEventListener('click', function() {
@@ -1029,6 +1251,8 @@ document.getElementById('mapareGLButton').addEventListener('click', function() {
       });
     }
   });
+  
+  
   </script>
   <!-- Footer -->
   
@@ -1039,6 +1263,7 @@ document.getElementById('mapareGLButton').addEventListener('click', function() {
 
   <!-- Custom JavaScript -->
   <script>
+    
     // Selectăm butonul pentru previzualizare și modalul de previzualizare
 const previewButton = document.getElementById('previewButton');
 const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
@@ -1155,7 +1380,24 @@ saveButton.addEventListener('click', function() {
       tableBody.appendChild(row);
     });
   }
-
+ $(document).ready(function () {
+    $('#map-table').DataTable({
+      dom: 'Bfrtip',
+      buttons: [ 'csv', 'excel'],
+      pageLength: 10,
+      lengthMenu: [5, 10, 25, 50, 100],
+      language: {
+        search: "Căutare:",
+        lengthMenu: "Afișează _MENU_ înregistrări",
+        info: "Afișează _START_ - _END_ din _TOTAL_",
+        paginate: {
+          next: "Următorul",
+          previous: "Înapoi"
+        },
+        zeroRecords: "Nicio înregistrare găsită",
+      }
+    });
+  });
   // Funcția pentru editarea unei note contabile
   function editNote(index) {
     alert("Editare pentru nota contabila cu indexul: " + index);
@@ -1192,6 +1434,215 @@ saveButton.addEventListener('click', function() {
         });
       }
     });
+
+
+
+
+
+
+ function deleteRow(button) {
+    const row = $(button).closest('tr');
+    const headers = [];
+
+    row.find('td').each(function(index) {
+      const colName = $('#map-table thead th').eq(index).text().trim();
+      const colValue = $(this).text().trim();
+
+      if (colName && colName !== 'Acțiune') {
+        headers.push({ key: colName, value: colValue });
+      }
+    });
+
+    const payload = {};
+    headers.forEach(item => {
+      payload[item.key] = item.value;
+    });
+
+    if (!confirm("Ești sigur că vrei să ștergi acest rând?")) return;
+
+    $.ajax({
+      url: '/delete_map',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(payload),
+      success: function () {
+        alert("Șters cu succes!");
+        row.remove();
+      },
+      error: function (xhr) {
+        alert("Eroare la ștergere: " + xhr.responseText);
+      }
+    });
+  }
+const sidebar = document.getElementById('historySidebar');
+const sidebarLabel = sidebar.querySelector('.sidebar-label');
+const closeBtn = document.getElementById('closeHistoryBtn');
+closeBtn.addEventListener('click', (e) => {
+  e.stopPropagation();  // previne propagarea evenimentului
+  sidebar.classList.remove('expanded');
+});
+
+// Click pe bara minimizată extinde sidebar-ul
+sidebarLabel.addEventListener('click', (e) => {
+  e.stopPropagation(); // previne propagarea
+  sidebar.classList.add('expanded');
+});
+
+// Click pe document închide sidebar-ul dacă click-ul nu e în interior
+document.addEventListener('click', (e) => {
+  if (!sidebar.contains(e.target)) {
+    sidebar.classList.remove('expanded');
+  }
+});
+
+// Click în interiorul sidebar-ului previne închiderea (oprește propagarea)
+sidebar.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+
+// function getRowData(row) {
+//     const cells = row.querySelectorAll('td');
+//     const headers = [...document.querySelectorAll('#map-table thead th')].map(h => h.innerText);
+//     headers.pop(); // remove "Acțiuni"
+//     const data = {};
+
+//     cells.forEach((cell, i) => {
+//       if (i < headers.length) {
+//         data[headers[i]] = cell.innerText.trim();
+//       }
+//     });
+
+//     return data;
+//   }
+
+//   // function editRow(btn) {
+//   //   const row = btn.closest('tr');
+//   //   const id = row.dataset.id;
+//   //   const data = getRowData(row);
+
+//   //   fetch(`/edit_map/${id}`, {
+//   //     method: 'POST',
+//   //     headers: { 'Content-Type': 'application/json' },
+//   //     body: JSON.stringify(data)
+//   //   }).then(r => {
+//   //     if (r.ok) alert("Rând actualizat.");
+//   //     else alert("Eroare la actualizare.");
+//   //   });
+//   // }
+
+
+//   function addEmptyRow() {
+//     const table = document.querySelector('#map-table tbody');
+//     const headers = document.querySelectorAll('#map-table thead th');
+//     const newRow = document.createElement('tr');
+
+//     headers.forEach((th, i) => {
+//       const td = document.createElement('td');
+//       td.contentEditable = i !== headers.length - 1;
+//       td.innerText = '';
+//       newRow.appendChild(td);
+//     });
+
+//     const actionTd = newRow.lastChild;
+//     actionTd.innerHTML = `
+//       <button class="btn btn-primary btn-sm" onclick="addRow(this)">Adaugă</button>
+//     `;
+
+//     table.appendChild(newRow);
+//   }
+
+//   function addRow(btn) {
+//     const row = btn.closest('tr');
+//     const data = getRowData(row);
+
+//     fetch('/add_map', {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify(data)
+//     }).then(r => {
+//       if (r.ok) {
+//         alert("Rând adăugat.");
+//         location.reload(); // sau doar actualizezi ID-ul, dacă vrei
+//       } else {
+//         alert("Eroare la adăugare.");
+//       }
+//     });
+//   }
+
+    
   </script>
+  <script>
+  $(document).ready(function () {
+    // const table = $('#map-table').DataTable({
+    //   dom: '<"d-flex justify-content-between align-items-center mb-3"Bf>rt<"d-flex justify-content-between align-items-center mt-3"lip>',
+    //   buttons: [
+    //     { extend: 'copy', text: 'Copiere' },
+    //     { extend: 'csv', text: 'CSV' },
+    //     { extend: 'excel', text: 'Excel' },
+    //     { extend: 'pdf', text: 'PDF' },
+    //     { extend: 'print', text: 'Printare' }
+    //   ],
+    //   pageLength: 10,
+    //   language: {
+    //     search: "🔍 Căutare:",
+    //     paginate: {
+    //       next: "Următorul",
+    //       previous: "Înapoi"
+    //     }
+    //   }
+    // });
+
+    $('#addRowBtn').click(function () {
+      const headers = {{ map_df[0].keys()|list|tojson }};
+      let newRow = '';
+      headers.forEach(key => {
+        if (key === 'ID') {
+          newRow += '<td></td>';
+        } else {
+          newRow += `<td contenteditable="true"></td>`;
+        }
+      });
+      newRow += `<td>
+                  <button class="btn btn-outline-success btn-sm" onclick="saveRow(this)">Salvează</button>
+                </td>`;
+      $('#map-table tbody').prepend(`<tr>${newRow}</tr>`);
+    });
+  });
+
+  function saveRow(button) {
+    const row = $(button).closest('tr');
+    const cells = row.find('td').toArray();
+    const data = {
+      'GL': $(cells[0]).text().trim(),
+      'Br': $(cells[1]).text().trim(),
+      'Statutory_GL': $(cells[2]).text().trim(),
+      'Statutory_Type': $(cells[3]).text().trim(),
+      'Transaction_Type': $(cells[4]).text().trim(),
+      'Headers': $(cells[5]).text().trim()
+    };
+
+    $.ajax({
+      url: '/add_map',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      success: function (response) {
+        alert('Rând adăugat cu succes!');
+        location.reload();  // reîncarcă pentru a vedea noul ID
+      },
+      error: function (xhr) {
+        alert('Eroare la salvare: ' + xhr.responseText);
+      }
+    });
+  }
+
+  function deleteRow(button) {
+    const row = button.closest('tr');
+    const table = $('#map-table').DataTable();
+    table.row(row).remove().draw();
+  }
+</script>
+
 </body>
 </html>

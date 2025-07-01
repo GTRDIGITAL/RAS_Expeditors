@@ -67,11 +67,15 @@ def mapare_gl_task(self):
         update_task_status(self.request.id, 'STARTED', 'Task mapare GL pornit...')
         from .procedurasql import procedura_mapare
         result = procedura_mapare()
+        
         update_task_status(self.request.id, 'SUCCESS', 'Mapare GL finalizată cu succes.')
+        from .procedurasql import generare_sold_clienti
+        result2= generare_sold_clienti()
         return {
             'status': 'success',
             'message': 'Mapare GL finalizată cu succes.'
         }
+        
     except SoftTimeLimitExceeded:
         update_task_status(self.request.id, 'REVOKED', 'Task oprit de utilizator (timeout)')
         return {

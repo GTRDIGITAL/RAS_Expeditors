@@ -10,7 +10,7 @@ from .mail import trimitereMail, trimitereOTPMail
 import utils
 from .database import get_all_users, get_user_from_db, update_user_in_db
 # from .stocareBD import *
-import mysql.connector
+# import mysql
 from .decorators import admin_required
 from .models import Users
 import pandas as pd
@@ -71,6 +71,102 @@ def get_previous_month(year, month):
 #     mapareSQL_task.delay()  # ✅ pornește task-ul în fundal
 #     flash("🔄 Mapare pornită în fundal!")
 #     return redirect(url_for('views.home'))
+def update_map_row(id, data):
+    connection = mysql.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+    cursor = connection.cursor(dictionary=True)
+
+    sql = """
+        UPDATE mapping
+        SET GL = %s,
+            Br = %s,
+            Statutory_GL = %s,
+            Statutory_Type = %s,
+            Transaction_Type = %s,
+            Headers = %s
+        WHERE ID = %s
+    """
+    values = (
+        data.get('GL'),
+        data.get('Br'),
+        data.get('Statutory_GL'),
+        data.get('Statutory_Type'),
+        data.get('Transaction_Type'),
+        data.get('Headers'),
+        id
+    )
+
+    cursor.execute(sql, values)
+    connection.commit()
+    cursor.close()
+    connection.close()
+@views.route('/delete_map', methods=['POST'])
+def delete_map():
+    data = request.get_json()
+
+    try:
+        # Extrage câmpurile cheie
+        gl = data.get("GL")
+        br = data.get("Br")
+        stat_gl = data.get("Statutory_GL")
+        stat_type = data.get("Statutory_Type")
+        trans_type = data.get("Transaction_Type")
+        headers = data.get("Headers")
+
+        if not all([gl, br, stat_gl, stat_type, trans_type, headers]):
+            return jsonify({'error': 'Lipsesc câmpuri obligatorii'}), 400
+        connection = mysql.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+        # Șterge pe baza cheii compuse
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM mapping
+                WHERE GL = %s AND Br = %s AND Statutory_GL = %s 
+                      AND Statutory_Type = %s AND Transaction_Type = %s 
+                      AND Headers = %s
+            """, (gl, br, stat_gl, stat_type, trans_type, headers))
+            connection.commit()
+
+        return jsonify({'message': 'Șters cu succes'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def insert_map_row(data):
+    connection = mysql.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+    cursor = connection.cursor(dictionary=True)
+    # cursor = conn.cursor()
+
+    sql = """
+        INSERT INTO mapping (GL, Br, Statutory_GL, Statutory_Type, Transaction_Type, Headers)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    values = (
+        data.get('GL'),
+        data.get('Br'),
+        data.get('Statutory_GL'),
+        data.get('Statutory_Type'),
+        data.get('Transaction_Type'),
+        data.get('Headers')
+    )
+
+    cursor.execute(sql, values)
+    connection.commit()
+    cursor.close()
+    connection.close()
 
 @views.errorhandler(403)
 def forbidden_error(error):
@@ -101,7 +197,7 @@ def main():
         return render_template('auth.html')
 
 def get_gl_from_db(startMonth, startYear, endMonth, endYear):
-    connection = mysql.connector.connect(
+    connection = mysql.connect(
         host=mysql_config['host'],
         user=mysql_config['user'],
         password=mysql_config['password'],
@@ -126,8 +222,52 @@ def get_gl_from_db(startMonth, startYear, endMonth, endYear):
     
 
     return gl 
+# 
+
+
+
+
+
+
+@views.route('/add_map', methods=['POST'])
+def add_map():
+    data = request.get_json()
+    try:
+        insert_map_row(data)  # inserare nouă în DB
+        return jsonify({'status': 'added'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def generare_sold_clienti(startMonth, startYear, endMonth, endYear):
+    connection = mysql.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+    cursor = connection.cursor(dictionary=True)  # Rezultatul va fi un dicționar
+
+    query = """
+        SELECT *
+        FROM general_ledger
+        WHERE (Year * 100 + Month) BETWEEN %s AND %s
+  AND JT IN ('INV', 'XINV', 'ICR')
+  AND (GL_Type != 'Asset')
+        ORDER BY Year, Month
+    """
+    start_key = startYear * 100 + startMonth
+    end_key = endYear * 100 + endMonth
+
+    cursor.execute(query, (start_key, end_key))
+    gl = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+    
+
+    return gl 
 def get_cont_tb_from_db(cont):
-    connection = mysql.connector.connect(
+    connection = mysql.connect(
         host=mysql_config['host'],
         user=mysql_config['user'],
         password=mysql_config['password'],
@@ -153,11 +293,36 @@ def get_cont_tb_from_db(cont):
     connection.close()
 
     return fisa_values
+def get_map_from_db():
+    connection = mysql.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+    cursor = connection.cursor(dictionary=True)
 
+    query = """
+        SELECT *
+        FROM mapping
+        
+        ORDER BY GL asc
+    """
+
+    # Extrage prima cifră din `cont` și formează patternul pentru LIKE
+    
+
+    cursor.execute(query)
+    map = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return map
 def get_balanta_months():
     from collections import defaultdict
     from datetime import datetime
-    connection = mysql.connector.connect(
+    connection = mysql.connect(
         host=mysql_config['host'],
         user=mysql_config['user'],
         password=mysql_config['password'],
@@ -166,6 +331,37 @@ def get_balanta_months():
     cursor = connection.cursor()
 
     query = "SELECT DISTINCT Month, Year FROM balanta_conturi ORDER BY Year DESC, Month DESC"
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    print("Rows from DB:", rows)  # debug
+
+    cursor.close()
+    connection.close()
+
+    luni_disponibile = defaultdict(list)
+    for month, year in rows:
+        try:
+            dt = datetime(year, month, 1)
+            luna_nume = dt.strftime('%B')  # ex: 'June'
+            an = str(year)
+            luni_disponibile[an].append(luna_nume)
+        except Exception as e:
+            print(f"Error processing {year}-{month}: {e}")  # debug
+
+    print("Grouped luni_disponibile:", dict(luni_disponibile))  # debug
+    return dict(luni_disponibile)
+def get_GL_months():
+    from collections import defaultdict
+    from datetime import datetime
+    connection = mysql.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+    cursor = connection.cursor()
+
+    query = "SELECT DISTINCT Month, Year FROM GENERAL_LEDGER ORDER BY Year DESC, Month DESC"
     cursor.execute(query)
     rows = cursor.fetchall()
     print("Rows from DB:", rows)  # debug
@@ -202,7 +398,7 @@ def months_in_interval(startMonth, startYear, endMonth, endYear):
             month += 1
     return months  
 def get_tb_from_db(startMonth, startYear, endMonth, endYear):
-    connection = mysql.connector.connect(
+    connection = mysql.connect(
         host=mysql_config['host'],
         user=mysql_config['user'],
         password=mysql_config['password'],
@@ -255,7 +451,7 @@ def get_tb_from_db(startMonth, startYear, endMonth, endYear):
 
     return gl, mesaj 
 def get_prev_tb_from_db(startMonth, startYear, endMonth, endYear):
-    connection = mysql.connector.connect(
+    connection = mysql.connect(
         host=mysql_config['host'],
         user=mysql_config['user'],
         password=mysql_config['password'],
@@ -290,7 +486,7 @@ def get_prev_tb_from_db(startMonth, startYear, endMonth, endYear):
     return tb_prev, mesaj
 
 def get_gl_period_from_db(startMonth, startYear, endMonth, endYear):
-    connection = mysql.connector.connect(
+    connection = mysql.connect(
         host=mysql_config['host'],
         user=mysql_config['user'],
         password=mysql_config['password'],
@@ -321,7 +517,7 @@ def get_gl_period_from_db(startMonth, startYear, endMonth, endYear):
 
     return gl, err 
 def get_fisa_cont_period_from_db(startMonth, startYear, endMonth, endYear, cont):
-    connection = mysql.connector.connect(
+    connection = mysql.connect(
         host=mysql_config['host'],
         user=mysql_config['user'],
         password=mysql_config['password'],
@@ -354,7 +550,7 @@ def get_fisa_cont_period_from_db(startMonth, startYear, endMonth, endYear, cont)
     return gl, err
 
 def insert_tb_df_to_db(tb_df):
-    connection = mysql.connector.connect(
+    connection = mysql.connect(
         host=mysql_config['host'],
         user=mysql_config['user'],
         password=mysql_config['password'],
@@ -497,9 +693,15 @@ def load_transform():
 
     cod = session.get('cod')
     code = session.get('verified_code')
-
+    luni_disponibile_gl = get_GL_months()
+    luni_disponibile=get_balanta_months()
     user = get_user_from_db(email)
     users_list = get_all_users()
+    map=get_map_from_db()
+    map_df=pd.DataFrame(map)
+    map_data = map_df.to_dict(orient='records')  # => list of dicts
+    print(map_data)
+
 
     if request.method == 'POST':
         if 'file' not in request.files:
@@ -528,7 +730,7 @@ def load_transform():
                 return jsonify({'message': str(e)}), 500
 
     if code == cod:
-        return render_template('load_transform.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id)
+        return render_template('load_transform.html', email=user.username, user_name=first_name, users=users_list, user_id=user.id, map_df=map_data, luni_disponibile=luni_disponibile, luni_disponibile_gl=luni_disponibile_gl)
     else:
         return render_template('auth.html')
     
@@ -605,6 +807,7 @@ def generate_reports_processing():
     code = session.get('verified_code')
     values_6= get_cont_tb_from_db("6")
     values_7= get_cont_tb_from_db("7")
+    clienti=generare_sold_clienti()
     user = get_user_from_db(email)
     users_list = get_all_users()
     fisier=None
@@ -646,6 +849,15 @@ def generate_reports_processing():
             nume_export= f"Fisa_cont_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
             values_6= get_cont_tb_from_db("6")
             values_7= get_cont_tb_from_db("7")
+        elif action == 'cl':
+            # Generează Fișa de cont
+            nume_export= f"Sold_clienti_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
+            clienti=generare_sold_clienti(start_month, start_year, end_month, end_year)
+            clienti_df= pd.DataFrame(clienti)
+            print(clienti, '++++++++++++++++++++++++++++++++++++++++++++++++++++')
+            clienti_df.to_excel(os.path.join(TEMP_FOLDER, f"Sold_clienti_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx"), index=False)
+            # values_6= get_cont_tb_from_db("411")
+            # values_7= get_cont_tb_from_db("7")
             
             # return f"Generez fișa de cont de la {start_month}/{start_year} până la {end_month}/{end_year}" 
         elif action == 'gl':
@@ -972,7 +1184,7 @@ def start_mapare_gl():
     try:
         task = mapare_gl_task.delay()
 
-        connection = mysql.connector.connect(**mysql_config)
+        connection = mysql.connect(**mysql_config)
         cursor = connection.cursor()
         cursor.execute(
             "INSERT INTO celery_tasks (task_id, start_time, status) VALUES (%s, NOW(), %s)",

@@ -34,3 +34,32 @@ def procedura_mapare():
     conn.close()
     print("🎉 Actualizare finalizată cu succes.")
     return "Actualizare finalizată cu succes."
+  
+  
+def generare_sold_clienti():
+    connection = mysql.connect(
+        host="efactura.mysql.database.azure.com",
+        user="useradmin",
+        password="Ho1*,3v1PBRY075a^d5-",
+        database="soft_contabil_database"
+    )
+    cursor = connection.cursor(dictionary=True)  # Rezultatul va fi un dicționar
+
+    query = """
+        INSERT INTO sold_clienti
+SELECT *
+FROM general_ledger_test
+WHERE JT IN ('INV', 'XINV', 'ICR')
+  AND GL_Type != 'Asset'
+ORDER BY Year, Month;
+    """
+    
+
+    cursor.execute(query)
+    gl = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+    
+
+    return "Actualizare finalizată cu succes."
