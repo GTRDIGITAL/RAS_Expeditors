@@ -193,7 +193,7 @@ def import_into_db(file):
 
         # Interogare INSERT
         insert_query = """
-            INSERT INTO general_ledger (
+            INSERT INTO general_ledger_test (
                 JT, GL, BR, statutory_gl, Prod, GL_Type, GL_Group, GL_Subtype, GL_Cat,
                 Journal, GCI, GCI_Br, Company, Open_Item, File_Ref, Date,
                 Month, Year, TC, Amount, Foreign_Amount, Foreign_Currency,

@@ -24,7 +24,7 @@ import redis  # Import the redis library
 import json
 from collections import defaultdict
 from .trimitereCodOTP import trimitereFilesMail
-
+import mysql.connector as mysql
 from .tasks import *
 from .config import *
 def extract_name_from_email(email):
@@ -483,8 +483,8 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({"error": f"Eroare stergere user: {str(e)}"}), 500
 
-UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
-UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
+# UPLOAD_FOLDER = r'C:\Dezvoltare\RAS/RAS Expeditors/uploads'  # Define the upload folder
+# UPLOAD_FOLDER = 'C:/Dezvoltare/RAS/RAS Expeditors/uploads'  # Define the upload folder
 # if not os.path.exists(UPLOAD_FOLDER):
 #     os.makedirs(UPLOAD_FOLDER)
 
@@ -507,6 +507,7 @@ def load_transform():
             return jsonify({'message': 'No file part'}), 400
 
         file = request.files['file']
+        print(file, 'fileee---')
 
         if file.filename == '':
             print("No file selected")  # Debugging
@@ -515,6 +516,7 @@ def load_transform():
         if file:
             try:
                 filename = file.filename
+                print(filename)
                 filepath = os.path.join(UPLOAD_FOLDER, filename)  # Use os.path.join
                 file.save(filepath)
 
@@ -921,7 +923,7 @@ def upload_into_database():
         # Pornește task-ul de import
         task = import_gl_task.delay(latest_file)
 
-        connection = mysql.connector.connect(**mysql_config)
+        connection = mysql.connect(**mysql_config)
         cursor = connection.cursor()
         cursor.execute(
             "INSERT INTO celery_tasks (task_id, start_time, status) VALUES (%s, NOW(), %s)",

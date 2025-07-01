@@ -628,10 +628,10 @@ input[type="checkbox"]:checked::after {
     <!-- Secțiunea 1: Introducere Perioadă și Mapare GL -->
     <div class="card mb-4" id="periode-mapping" style="display:none;">
       <div class="card-header">Mapare GL prin Perioadă</div>
-      <div class="card-body">
+      div class="card-body">
           <label class="label" for="periodeInput">Introduceți perioada:</label>
           <input type="month" id="periodeInput" class="form-control" placeholder="YYYY-MM">
-          <button class="btn btn-primary mt-2">Mapare GL</button>
+          <button class="btn btn-primary mt-2" id="mapareGLButton">Mapare GL</button>
       </div>
   </div>
   <div class="card mb-4" id="show-all" style="display:none;">
@@ -842,6 +842,20 @@ input[type="checkbox"]:checked::after {
 
   <div id="importStatus">IMPORT STATUS</div>
   <script>
+
+document.getElementById('mapareGLButton').addEventListener('click', function() {
+        fetch('/start_mapare_gl', {method: 'POST'})
+          .then(response => response.json())
+          .then(data => {
+              alert(data.message);
+              if (data.task_id) {
+                  checkTaskStatus(data.task_id); // poți folosi același polling ca la import
+              }
+          })
+          .catch(error => {
+              alert('Eroare la pornirea mapării GL!');
+          });
+    });
 
     function checkTaskStatus(taskId) {
     fetch(`/task_status/${taskId}`)
