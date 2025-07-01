@@ -1,7 +1,7 @@
-import mysql.connector
+import mysql.connector as mysql
 
 def procedura_mapare():
-    conn = mysql.connector.connect(
+    conn = mysql.connect(
         host="efactura.mysql.database.azure.com",
         user="useradmin",
         password="Ho1*,3v1PBRY075a^d5-",
@@ -43,23 +43,23 @@ def generare_sold_clienti():
         password="Ho1*,3v1PBRY075a^d5-",
         database="soft_contabil_database"
     )
-    cursor = connection.cursor(dictionary=True)  # Rezultatul va fi un dicționar
+    cursor = connection.cursor()  # Nu e nevoie de dictionary=True pentru INSERT
 
     query = """
         INSERT INTO sold_clienti
-SELECT *
-FROM general_ledger_test
-WHERE JT IN ('INV', 'XINV', 'ICR')
-  AND GL_Type != 'Asset'
-ORDER BY Year, Month;
+        SELECT *
+        FROM general_ledger_test
+        WHERE JT IN ('INV', 'XINV', 'ICR')
+          AND GL_Type != 'Asset'
+        ORDER BY Year, Month;
     """
-    
 
     cursor.execute(query)
-    gl = cursor.fetchall()
+    connection.commit()  # Salvează modificările
+
+    rows_inserted = cursor.rowcount  # Numărul de rânduri inserate
 
     cursor.close()
     connection.close()
-    
 
-    return "Actualizare finalizată cu succes."
+    return f"Actualizare finalizată cu succes. {rows_inserted} rânduri inserate."
