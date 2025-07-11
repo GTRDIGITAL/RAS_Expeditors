@@ -667,7 +667,7 @@ input[type="checkbox"]:checked::after {
     </div>
   </nav>
 
-<div id="historySidebar" title="Istoric documente">
+<div id="historySidebar" class="extended" title="Istoric documente">
   <div class="sidebar-label">
    History
   </div>
@@ -716,13 +716,13 @@ input[type="checkbox"]:checked::after {
 
   </div>
 </div>
-
-
+ 
   <div class="container">
    
     
     <!-- Panou de Control -->
     <div class="container-2">
+      
       <div class="card mb-5">
         <div class="card-header">
           Panou de Control
@@ -731,12 +731,14 @@ input[type="checkbox"]:checked::after {
           <div class="nav-links">
             <a href="javascript:void(0);" onclick="toggleSection('manual-import')" class="btn btn-outline-success">Manual import</a>
             <a href="javascript:void(0);" onclick="toggleSection('periode-mapping')" class="btn btn-outline-primary">Mapare GL prin Perioadă</a>
+            <a href="javascript:void(0);" onclick="toggleSection('add-entry')" class="btn btn-outline-warning">Adăugare Notă Contabilă Manual</a>
+            <a href="javascript:void(0);" onclick="toggleSection('import-nc-section')" class="btn btn-outline-warning">Import Notă Contabilă</a>
+            <a href="javascript:void(0);" onclick="toggleSection('show-all')" class="btn btn-outline-warning">Istoric si editare note contabile</a>
             <a href="javascript:void(0);" onclick="toggleSection('cl')" class="btn btn-outline-primary">Generare sold clienti</a>
             <a href="javascript:void(0);" onclick="toggleSection('sup')" class="btn btn-outline-primary">Generare sold furnizori</a>
             <a href="javascript:void(0);" onclick="toggleSection('map')" class="btn btn-outline-primary">Vizualizare Mapare</a>
             
-            <a href="javascript:void(0);" onclick="toggleSection('add-entry')" class="btn btn-outline-warning">Adăugare Notă Contabilă</a>
-            <a href="javascript:void(0);" onclick="toggleSection('show-all')" class="btn btn-outline-warning">Istoric si editare note contabile</a>
+            
           </div>
         </div>
       </div>
@@ -848,6 +850,43 @@ input[type="checkbox"]:checked::after {
 
 
   <!-- Secțiunea 2: Import Manual Excel -->
+<div class="card mb-4" id="import-nc-section" style="display:none;">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Import Notă Contabilă</span>
+    <!-- Buton Descărcare Template -->
+    
+  </div>
+
+  <div class="card-body">
+   <div> <a href="/static/Template_NC.xlsx" download class="btn btn-outline-primary btn-sm" title="Descarcă template Excel">
+      <i class="bi bi-download me-1"></i> Template Excel
+    </a></div>
+    <label class="form-label" for="nc-file-upload">Încarcă fișier Excel:</label>
+    <input type="file" id="nc-file-upload" class="form-control">
+    
+    <span id="nc-file-name-display" style="display:none;">
+      <i class="fas fa-check-circle text-success me-1"></i> Fișier selectat
+    </span>
+
+    <!-- Progress Bar -->
+    <div class="progress mt-2" style="height: 20px;">
+      <div id="nc-upload-progress-bar" class="progress-bar" role="progressbar" style="width: 0%;" 
+           aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-success" id="nc-upload-button" disabled data-toggle="tooltip" title="Alege un fișier de importat">
+        Upload fișier
+      </button>
+      <button class="btn btn-success" id="nc-import-button" data-toggle="tooltip" title="Importă în baza de date">
+        Importă în baza de date
+      </button>
+    </div>
+  </div>
+</div>
+
+  
+
   <div class="card mb-4" id="manual-import" style="display:none;">
     <div class="card-header">Manual Import for Mapping</div>
     <div class="card-body">
@@ -866,7 +905,16 @@ input[type="checkbox"]:checked::after {
 <button class="btn btn-success mt-2" id="importButton" data-toggle="tooltip" data-placement="top" title="Import into database">Import into database</button>
 </div>
 </div>
-  
+
+
+
+
+
+
+
+
+
+
   <div class="card mb-4" id="map" style="display:none;">
   <div class="card-header">Vizualizare mapare</div>
   <div class="card-body">
@@ -1448,7 +1496,7 @@ saveButton.addEventListener('click', function() {
       const colName = $('#map-table thead th').eq(index).text().trim();
       const colValue = $(this).text().trim();
 
-      if (colName && colName !== 'Acțiune') {
+      if (colName && colName !== 'Acțiuni') {
         headers.push({ key: colName, value: colValue });
       }
     });
@@ -1499,7 +1547,26 @@ document.addEventListener('click', (e) => {
 sidebar.addEventListener('click', (e) => {
   e.stopPropagation();
 });
+window.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('historySidebar');
 
+    // Deschidere automată cu întârziere de 600ms
+    setTimeout(() => {
+      sidebar.classList.add('expanded');
+    }, 600);
+
+    // Închidere la clic pe „×”
+    document.getElementById('closeHistoryBtn').addEventListener('click', () => {
+      sidebar.classList.remove('expanded');
+    });
+
+    // (Opțional) click pe bara laterală redeschide
+    sidebar.addEventListener('click', () => {
+      if (!sidebar.classList.contains('expanded')) {
+        sidebar.classList.add('expanded');
+      }
+    });
+  });
 
 // function getRowData(row) {
 //     const cells = row.querySelectorAll('td');
@@ -1637,11 +1704,11 @@ sidebar.addEventListener('click', (e) => {
     });
   }
 
-  function deleteRow(button) {
-    const row = button.closest('tr');
-    const table = $('#map-table').DataTable();
-    table.row(row).remove().draw();
-  }
+  // function deleteRow(button) {
+  //   const row = button.closest('tr');
+  //   const table = $('#map-table').DataTable();
+  //   table.row(row).remove().draw();
+  // }
 </script>
 
 </body>

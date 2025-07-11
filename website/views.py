@@ -27,6 +27,8 @@ from .trimitereCodOTP import trimitereFilesMail
 import mysql.connector as mysql
 from .tasks import *
 from .config import *
+
+abc = ''
 def extract_name_from_email(email):
     local_part = email.split('@')[0]
     name_parts = local_part.replace('.', ' ').replace('-', ' ').split(' ')
@@ -71,6 +73,85 @@ def get_previous_month(year, month):
 #     mapareSQL_task.delay()  # ✅ pornește task-ul în fundal
 #     flash("🔄 Mapare pornită în fundal!")
 #     return redirect(url_for('views.home'))
+def insert_into_sold_clienti(clienti_df):
+    connection = mysql.connect(
+        host=mysql_config['host'],
+        user=mysql_config['user'],
+        password=mysql_config['password'],
+        database=mysql_config['database']
+    )
+
+    column_mapping = {
+        'GCI': 'ï»¿GCI',
+        'Company': 'Name',
+        'BR': 'Branch',
+        'Journal': 'Invoice',
+        'File_Ref': 'File',
+        'Amount': 'Balance',
+        'Foreign Amount': 'Balance Foreign',
+        'For currency': 'CUR',
+        'Date': 'Date',
+        'Month': 'Month',
+        'Year': 'Year',
+        'DSO': 'DSO',
+        'Overdue': 'Overdue',
+        'Statutory_GL': 'GL',
+    }
+
+    sold_clienti_columns = [
+        'ï»¿GCI', 'Name', 'Billing Profile', 'Branch', 'Invoice', 'File', 'Total', 'Total Foreign', 'Tot CUR',
+        'Balance', 'Balance Foreign', 'CUR', 'Tax Invoice', 'Date', 'Month', 'Year', 'Issue Date',
+        'Tax Invoice Date', 'DSO', 'Due Date', 'Overdue', 'Close Date', 'EDI Status', 'Service Order',
+        'Consol', 'curs bnr', 'reevaluare', 'diferenta de curs', 'Status', 'GL'
+    ]
+
+    numeric_columns = ['Total', 'Total Foreign', 'Tot CUR', 'Balance', 'Balance Foreign',
+                       'DSO', 'Overdue', 'curs bnr', 'reevaluare', 'diferenta de curs']
+
+    # Inițializare cu valori implicite
+    insert_df = pd.DataFrame(index=clienti_df.index, columns=sold_clienti_columns)
+
+    # Populăm cu valorile din dataframe-ul sursă
+    for client_col, sold_col in column_mapping.items():
+        if client_col in clienti_df.columns and sold_col in insert_df.columns:
+            insert_df[sold_col] = clienti_df[client_col]
+
+    # Valori implicite
+    insert_df['curs bnr'] = 1
+    insert_df['Status'] = 'Unpaid'
+    insert_df['Consol'] = None
+
+    # Issue Date = Date dacă există
+    if 'Date' in clienti_df.columns and 'Issue Date' in insert_df.columns:
+        insert_df['Issue Date'] = clienti_df['Date']
+
+    # Completăm coloanele numerice lipsă cu 0
+    for col in numeric_columns:
+        if col in insert_df.columns:
+            insert_df[col] = insert_df[col].apply(lambda x: 0 if pd.isna(x) or x == '' else x)
+
+    # Completăm restul coloanelor lipsă cu ''
+    insert_df.fillna('', inplace=True)
+
+    # Înlocuim stringurile goale cu None pentru MySQL unde e nevoie
+    insert_df = insert_df.replace('', None)
+
+    # Pregătim query-ul
+    placeholders = ', '.join(['%s'] * len(sold_clienti_columns))
+    columns_sql = ', '.join(f"`{col}`" for col in sold_clienti_columns)
+    sql = f"INSERT INTO sold_clienti ({columns_sql}) VALUES ({placeholders})"
+
+    # Transformăm dataframe-ul într-o listă de tuple pentru executemany
+    rows_to_insert = insert_df.to_records(index=False).tolist()
+
+    # Executăm în bloc
+    cursor = connection.cursor()
+    cursor.executemany(sql, rows_to_insert)
+    connection.commit()
+    cursor.close()
+
+
+
 def update_map_row(id, data):
     connection = mysql.connect(
         host=mysql_config['host'],
@@ -115,24 +196,48 @@ def delete_map():
         stat_gl = data.get("Statutory_GL")
         stat_type = data.get("Statutory_Type")
         trans_type = data.get("Transaction_Type")
-        headers = data.get("Headers")
 
-        if not all([gl, br, stat_gl, stat_type, trans_type, headers]):
-            return jsonify({'error': 'Lipsesc câmpuri obligatorii'}), 400
+        # Colectează condițiile doar pentru câmpurile prezente
+        conditions = []
+        params = []
+
+        if gl is not None:
+            conditions.append("GL = %s")
+            params.append(gl)
+
+        if br is not None:
+            conditions.append("Br = %s")
+            params.append(br)
+
+        if stat_gl is not None:
+            conditions.append("Statutory_GL = %s")
+            params.append(stat_gl)
+
+        if stat_type is not None:
+            conditions.append("Statutory_Type = %s")
+            params.append(stat_type)
+
+        if trans_type is not None:
+            conditions.append("Transaction_Type = %s")
+            params.append(trans_type)
+
+        # Dacă nu ai niciun câmp, nu face nimic
+        if not conditions:
+            return jsonify({'error': 'Trebuie cel puțin un câmp pentru a șterge'}), 400
+
+        # Construiește WHERE dinamic
+        where_clause = " AND ".join(conditions)
+
         connection = mysql.connect(
-        host=mysql_config['host'],
-        user=mysql_config['user'],
-        password=mysql_config['password'],
-        database=mysql_config['database']
-    )
-        # Șterge pe baza cheii compuse
+            host=mysql_config['host'],
+            user=mysql_config['user'],
+            password=mysql_config['password'],
+            database=mysql_config['database']
+        )
+
         with connection.cursor() as cursor:
-            cursor.execute("""
-                DELETE FROM mapping
-                WHERE GL = %s AND Br = %s AND Statutory_GL = %s 
-                      AND Statutory_Type = %s AND Transaction_Type = %s 
-                      AND Headers = %s
-            """, (gl, br, stat_gl, stat_type, trans_type, headers))
+            query = f"DELETE FROM mapping WHERE {where_clause}"
+            cursor.execute(query, params)
             connection.commit()
 
         return jsonify({'message': 'Șters cu succes'}), 200
@@ -252,7 +357,7 @@ def generare_sold_clienti(startMonth, startYear, endMonth, endYear):
         FROM general_ledger
         WHERE (Year * 100 + Month) BETWEEN %s AND %s
   AND JT IN ('INV', 'XINV', 'ICR')
-  AND (GL_Type != 'Asset')
+  
         ORDER BY Year, Month
     """
     start_key = startYear * 100 + startMonth
@@ -796,6 +901,245 @@ def genereaza_fisa():
     # return redirect(url_for('views.generate_reports_processing'))  # Redirect to the report generation page
     # Aici poți procesa mai departe, returna pagină, genera PDF, etc.
     return "Fișa generată! Verifică consola serverului pentru output."
+
+@views.route('/genereaza_sold_clienti', methods=['POST'])
+def genereaza_sold_clienti():
+    start_date = request.form.get('start-dateCl')
+    end_date = request.form.get('end-dateCl')
+    start_year, start_month = map(int, start_date.split('-'))
+    end_year, end_month = map(int, end_date.split('-'))
+
+    email = session.get('email')
+    first_name = extract_name_from_email(email)
+
+    atasamente = []
+
+    clienti = generare_sold_clienti(start_month, start_year, end_month, end_year)
+    if not clienti:
+        flash("Nu s-au găsit date pentru perioada selectată.", "warning")
+        return jsonify({'status': 'no_data'})
+
+    clienti_df = pd.DataFrame(clienti)
+    gl_map = (
+        clienti_df[clienti_df['GL_Type'] == 'ASSET']
+        # doar dacă vrei să sari peste cele goale
+        .groupby('GCI')['Statutory_GL']
+        .first()
+    )
+
+    # 2. Suprascriem toate valorile din Statutory_GL, dacă GCI-ul are un GL asociat în map
+    clienti_df['Statutory_GL'] = clienti_df.apply(
+        lambda row: gl_map[row['GCI']] if row['GCI'] in gl_map else row['Statutory_GL'],
+        axis=1
+    )
+
+    # 3. (Opțional) Ștergem linia cu GL_Type == 'ASSET'
+    clienti_df = clienti_df[clienti_df['GL_Type'] != 'ASSET']
+    clienti_df= clienti_df.loc[~clienti_df['GL_Type'].astype(str).str.contains("ASSET")]
+    clienti_df.to_excel(os.path.join(TEMP_FOLDER, f"Clienti_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx"), index=False)
+    required_cols = ['Statutory_GL', 'Customer_GCI', 'Customer_Name', 'Amount', 'Foreign_Amount', 'Foreign_Currency']
+    insert_into_sold_clienti(clienti_df)
+    if not all(col in clienti_df.columns for col in required_cols):
+        missing = [col for col in required_cols if col not in clienti_df.columns]
+        raise ValueError(f"Lipsesc coloane necesare: {missing}")
+
+    unique_gls = clienti_df['Statutory_GL'].dropna().unique()
+
+    for gl in unique_gls:
+        gl_df = clienti_df[clienti_df['Statutory_GL'] == gl].copy()
+
+        # Pivot extins pe GCI + Customer_Name
+        pivot = gl_df.pivot_table(
+            index=['Customer_GCI', 'Customer_Name'],
+            values=['Amount', 'Foreign_Amount'],
+            aggfunc='sum'
+        ).reset_index()
+
+        pivot['Statutory_GL'] = gl
+
+        # Detectăm valută unică sau MULTI
+                # Pivot extins pe Customer_Name + Customer_GCI
+        pivot = gl_df.pivot_table(
+            index=['Customer_GCI', 'Customer_Name'],
+            values=['Amount', 'Foreign_Amount'],
+            aggfunc='sum'
+        ).reset_index()
+
+        # Asigurăm coloanele necesare
+        for col in ['Amount', 'Foreign_Amount']:
+            if col not in pivot.columns:
+                pivot[col] = 0.0
+
+        pivot['Statutory_GL'] = gl
+
+        # Mapare valute per client
+        currency_map = (
+            gl_df.groupby('Customer_Name')['Foreign_Currency']
+            .apply(lambda x: ', '.join(sorted(x.dropna().unique())))
+            .fillna('RON')
+            .to_dict()
+        )
+        pivot['Foreign_Currency'] = pivot['Customer_Name'].map(currency_map).fillna('RON')
+        pivot['Foreign_Currency']=pivot["Foreign_Currency"].apply(lambda x: x if x != '' else 'RON')
+        # Reordonare finală
+        pivot = pivot[['Statutory_GL', 'Customer_GCI', 'Customer_Name', 'Amount', 'Foreign_Amount', 'Foreign_Currency']]
+
+
+        # Salvare fișier Excel
+        file_name = os.path.join(TEMP_FOLDER, f"Sold_clienti_{gl}_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx")
+
+        with pd.ExcelWriter(file_name, engine='xlsxwriter') as writer:
+            gl_df.to_excel(writer, index=False, sheet_name='Date')
+            pivot.to_excel(writer, index=False, sheet_name='Pivot_Clienti')
+
+            workbook = writer.book
+            worksheet = writer.sheets['Pivot_Clienti']
+
+            # Formatare
+            header_format = workbook.add_format({
+                'bold': True, 'bg_color': '#BDD7EE',
+                'border': 1, 'align': 'center'
+            })
+            currency_format = workbook.add_format({'num_format': '#,##0.00', 'align': 'right'})
+            text_format = workbook.add_format({'align': 'left'})
+
+            for col_num, value in enumerate(pivot.columns):
+                worksheet.write(0, col_num, value, header_format)
+                max_width = max(pivot[value].astype(str).map(len).max(), len(value)) + 2
+                if value in ['Amount', 'Foreign_Amount']:
+                    worksheet.set_column(col_num, col_num, max_width, currency_format)
+                else:
+                    worksheet.set_column(col_num, col_num, max_width, text_format)
+
+        atasamente.append(file_name)
+
+    # ZIP și e-mail
+    if atasamente:
+        zip_path = os.path.join(TEMP_FOLDER, f"Sold_clienti_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.zip")
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for path in atasamente:
+                zipf.write(path, arcname=os.path.basename(path))
+
+        try:
+            trimitereFilesMail(first_name, email, zip_path)
+            flash("Fișierele au fost trimise pe e-mail.", "info")
+        except Exception as e:
+            print("Eroare trimitere e-mail:", e)
+            flash("A apărut o eroare la trimiterea e-mailului.", "danger")
+
+    return jsonify({'status': 'success'})
+
+
+# @views.route('/genereaza_sold_furnizori', methods=['POST'])
+# def genereaza_sold_furnizori():
+#     start_date = request.form.get('start-dateFz')
+#     end_date = request.form.get('end-dateFz')
+#     start_year, start_month = map(int, start_date.split('-'))
+#     end_year, end_month = map(int, end_date.split('-'))
+
+#     email = session.get('email')
+#     first_name = extract_name_from_email(email)
+
+#     atasamente = []
+
+#     furnizori = generare_sold_furnizori(start_month, start_year, end_month, end_year)
+#     if not furnizori:
+#         flash("Nu s-au găsit date pentru perioada selectată.", "warning")
+#         return jsonify({'status': 'no_data'})
+
+#     furnizori_df = pd.DataFrame(furnizori)
+
+#     required_cols = ['Statutory_GL', 'Customer_GCI', 'Customer_Name', 'Amount', 'Foreign_Amount', 'Foreign_Currency']
+#     if not all(col in clienti_df.columns for col in required_cols):
+#         missing = [col for col in required_cols if col not in clienti_df.columns]
+#         raise ValueError(f"Lipsesc coloane necesare: {missing}")
+
+#     unique_gls = clienti_df['Statutory_GL'].dropna().unique()
+
+#     for gl in unique_gls:
+#         gl_df = clienti_df[clienti_df['Statutory_GL'] == gl].copy()
+
+#         # Pivot extins pe GCI + Customer_Name
+#         pivot = gl_df.pivot_table(
+#             index=['Customer_GCI', 'Customer_Name'],
+#             values=['Amount', 'Foreign_Amount'],
+#             aggfunc='sum'
+#         ).reset_index()
+
+#         pivot['Statutory_GL'] = gl
+
+#         # Detectăm valută unică sau MULTI
+#                 # Pivot extins pe Customer_Name + Customer_GCI
+#         pivot = gl_df.pivot_table(
+#             index=['Customer_GCI', 'Customer_Name'],
+#             values=['Amount', 'Foreign_Amount'],
+#             aggfunc='sum'
+#         ).reset_index()
+
+#         # Asigurăm coloanele necesare
+#         for col in ['Amount', 'Foreign_Amount']:
+#             if col not in pivot.columns:
+#                 pivot[col] = 0.0
+
+#         pivot['Statutory_GL'] = gl
+
+#         # Mapare valute per client
+#         currency_map = (
+#             gl_df.groupby('Customer_Name')['Foreign_Currency']
+#             .apply(lambda x: ', '.join(sorted(x.dropna().unique())))
+#             .fillna('RON')
+#             .to_dict()
+#         )
+#         pivot['Foreign_Currency'] = pivot['Customer_Name'].map(currency_map).fillna('RON')
+#         pivot['Foreign_Currency']=pivot["Foreign_Currency"].apply(lambda x: x if x != '' else 'RON')
+#         # Reordonare finală
+#         pivot = pivot[['Statutory_GL', 'Customer_GCI', 'Customer_Name', 'Amount', 'Foreign_Amount', 'Foreign_Currency']]
+
+
+#         # Salvare fișier Excel
+#         file_name = os.path.join(TEMP_FOLDER, f"Sold_Furnizori_{gl}_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx")
+
+#         with pd.ExcelWriter(file_name, engine='xlsxwriter') as writer:
+#             gl_df.to_excel(writer, index=False, sheet_name='Date')
+#             pivot.to_excel(writer, index=False, sheet_name='Pivot_Furnizori')
+
+#             workbook = writer.book
+#             worksheet = writer.sheets['Pivot_Furnizori']
+
+#             # Formatare
+#             header_format = workbook.add_format({
+#                 'bold': True, 'bg_color': '#BDD7EE',
+#                 'border': 1, 'align': 'center'
+#             })
+#             currency_format = workbook.add_format({'num_format': '#,##0.00', 'align': 'right'})
+#             text_format = workbook.add_format({'align': 'left'})
+
+#             for col_num, value in enumerate(pivot.columns):
+#                 worksheet.write(0, col_num, value, header_format)
+#                 max_width = max(pivot[value].astype(str).map(len).max(), len(value)) + 2
+#                 if value in ['Amount', 'Foreign_Amount']:
+#                     worksheet.set_column(col_num, col_num, max_width, currency_format)
+#                 else:
+#                     worksheet.set_column(col_num, col_num, max_width, text_format)
+
+#         atasamente.append(file_name)
+
+#     # ZIP și e-mail
+#     if atasamente:
+#         zip_path = os.path.join(TEMP_FOLDER, f"Sold_Furnizori_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.zip")
+#         with zipfile.ZipFile(zip_path, 'w') as zipf:
+#             for path in atasamente:
+#                 zipf.write(path, arcname=os.path.basename(path))
+
+#         try:
+#             trimitereFilesMail(first_name, email, zip_path)
+#             flash("Fișierele au fost trimise pe e-mail.", "info")
+#         except Exception as e:
+#             print("Eroare trimitere e-mail:", e)
+#             flash("A apărut o eroare la trimiterea e-mailului.", "danger")
+
+#     return jsonify({'status': 'success'})
+
 @views.route('/generate_reports', methods=['GET', 'POST'])
 # @login_required
 # @admin_required
@@ -807,7 +1151,7 @@ def generate_reports_processing():
     code = session.get('verified_code')
     values_6= get_cont_tb_from_db("6")
     values_7= get_cont_tb_from_db("7")
-    clienti=generare_sold_clienti()
+    
     user = get_user_from_db(email)
     users_list = get_all_users()
     fisier=None
@@ -850,16 +1194,34 @@ def generate_reports_processing():
             values_6= get_cont_tb_from_db("6")
             values_7= get_cont_tb_from_db("7")
         elif action == 'cl':
-            # Generează Fișa de cont
-            nume_export= f"Sold_clienti_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}"
-            clienti=generare_sold_clienti(start_month, start_year, end_month, end_year)
-            clienti_df= pd.DataFrame(clienti)
-            print(clienti, '++++++++++++++++++++++++++++++++++++++++++++++++++++')
-            clienti_df.to_excel(os.path.join(TEMP_FOLDER, f"Sold_clienti_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx"), index=False)
-            # values_6= get_cont_tb_from_db("411")
-            # values_7= get_cont_tb_from_db("7")
-            
-            # return f"Generez fișa de cont de la {start_month}/{start_year} până la {end_month}/{end_year}" 
+    # Generează Sold clienți
+            clienti = generare_sold_clienti(start_month, start_year, end_month, end_year)
+            clienti_df = pd.DataFrame(clienti)
+
+            # Verificare rapidă coloane esențiale
+            required_cols = ['Statutory_GL', 'Customer', 'Amount']
+            if not all(col in clienti_df.columns for col in required_cols):
+                raise ValueError(f"Coloanele necesare lipsesc: {required_cols}")
+
+            # Grupare după Statutory_GL
+            unique_gls = clienti_df['Statutory_GL'].dropna().unique()
+
+            for gl in unique_gls:
+                gl_df = clienti_df[clienti_df['Statutory_GL'] == gl]
+
+                # Pivot: sumă Amount pe Customer
+                pivot = gl_df.pivot_table(index='Customer', values='Amount', aggfunc='sum').reset_index()
+
+                # Nume fișier și salvare
+                file_name = f"{TEMP_FOLDER}/Sold_clienti_{gl}_{start_month:02d}_{start_year}_{end_month:02d}_{end_year}.xlsx"
+                with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
+                    gl_df.to_excel(writer, index=False, sheet_name='Date')
+                    pivot.to_excel(writer, index=False, sheet_name='Pivot_Clienti')
+
+                    # values_6= get_cont_tb_from_db("411")
+                    # values_7= get_cont_tb_from_db("7")
+                    
+                    # return f"Generez fișa de cont de la {start_month}/{start_year} până la {end_month}/{end_year}" 
         elif action == 'gl':
             # Generează Fișa de cont
             gl,err= get_gl_period_from_db(start_month, start_year, end_month, end_year)

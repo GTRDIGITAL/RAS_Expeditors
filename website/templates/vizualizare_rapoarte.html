@@ -585,7 +585,161 @@ input[type="checkbox"]:checked::after {
   </div>
 </div>
   </div>
-</form><form method="POST">
+</form>
+
+
+<div id="dropdown-container-cl" class="mt-4" style="display: none;">
+  
+   <form method="POST" id="fisaFormCl">
+  <div class="form-check mb-3">
+  <div class="text-center mb-4">
+ <div class="d-inline-block px-4 py-2 rounded-3 border shadow-sm bg-light">
+      <span class="text-muted">Perioadă selectată:</span><br>
+
+      <input type="text" 
+             id="start-date-fisaCl" 
+             name="start-dateCl" 
+             readonly 
+             class="border-0 bg-transparent text-dark fw-semibold text-center" 
+             style="width: 140px;" 
+             value="-">
+
+      <span class="mx-2 text-muted">→</span>
+
+      <input type="text" 
+             id="end-date-fisaCl" 
+             name="end-dateCl" 
+             readonly 
+             class="border-0 bg-transparent text-dark fw-semibold text-center" 
+             style="width: 140px;" 
+             value="-">
+    </div> 
+
+    
+  <!-- <div class="mb-3" id="selectContCl" style="display: none;">
+    <label for="conturiCl">Conturi de clienti:</label>
+    <select id="conturiCl" name="conturiCl" class="form-select" multiple>
+      <option value="select_all">🔘 Selectează toate</option>
+      {% for item in values_cl %}
+      <option value="{{ item.GL }}">{{ item.GL }}</option>
+    {% endfor %}
+    </select>
+  </div> -->
+
+
+    
+    <!-- <input class="form-check-input" type="checkbox" value="" id="checkCont7">
+    <label class="form-check-label" for="checkCont7">Fișa Conturi de 7</label>
+  </div>
+  <div class="mb-3" id="selectCont7" style="display: none;">
+    <label for="conturi7">Conturi de 7:</label>
+    <select id="conturi7" name="conturi7[]" class="form-select" multiple>
+      <option value="select_all">🔘 Selectează toate</option>
+      {% for item in values_7 %}
+      <option value="{{ item.GL }}">{{ item.GL }}</option>
+    {% endfor %}
+    </select> -->
+  </div> 
+
+  <!-- Butoane acțiune -->
+  <div class="d-flex gap-3 mt-4">
+    <button id="genereazaFisaCl" type="submit" class="btn btn-primary">
+      <i class="bi bi-play-circle"></i> Generează Sold de Clienți
+    </button>
+    <button id="cancelFisaCl" type="button" class="btn btn-outline-danger">
+      <i class="bi bi-x-circle"></i> Anulează
+    </button>
+  </div>
+</div>
+  </div>
+</form>
+
+
+
+
+<div id="dropdown-container-fz" class="mt-4" style="display: none;">
+  
+   <form method="POST" id="fisaFormFz">
+  <div class="form-check mb-3">
+  <div class="text-center mb-4">
+ <div class="d-inline-block px-4 py-2 rounded-3 border shadow-sm bg-light">
+      <span class="text-muted">Perioadă selectată:</span><br>
+
+      <input type="text" 
+             id="start-date-fisaFz" 
+             name="start-dateFz" 
+             readonly 
+             class="border-0 bg-transparent text-dark fw-semibold text-center" 
+             style="width: 140px;" 
+             value="-">
+
+      <span class="mx-2 text-muted">→</span>
+
+      <input type="text" 
+             id="end-date-fisaFz" 
+             name="end-dateFz" 
+             readonly 
+             class="border-0 bg-transparent text-dark fw-semibold text-center" 
+             style="width: 140px;" 
+             value="-">
+    </div> 
+
+    
+  <!-- <div class="mb-3" id="selectContCl" style="display: none;">
+    <label for="conturiCl">Conturi de clienti:</label>
+    <select id="conturiCl" name="conturiCl" class="form-select" multiple>
+      <option value="select_all">🔘 Selectează toate</option>
+      {% for item in values_cl %}
+      <option value="{{ item.GL }}">{{ item.GL }}</option>
+    {% endfor %}
+    </select>
+  </div> -->
+
+
+    
+    <!-- <input class="form-check-input" type="checkbox" value="" id="checkCont7">
+    <label class="form-check-label" for="checkCont7">Fișa Conturi de 7</label>
+  </div>
+  <div class="mb-3" id="selectCont7" style="display: none;">
+    <label for="conturi7">Conturi de 7:</label>
+    <select id="conturi7" name="conturi7[]" class="form-select" multiple>
+      <option value="select_all">🔘 Selectează toate</option>
+      {% for item in values_7 %}
+      <option value="{{ item.GL }}">{{ item.GL }}</option>
+    {% endfor %}
+    </select> -->
+  </div> 
+
+  <!-- Butoane acțiune -->
+  <div class="d-flex gap-3 mt-4">
+    <button id="genereazaFisaFz" type="submit" class="btn btn-primary">
+      <i class="bi bi-play-circle"></i> Generează Sold de Clienți
+    </button>
+    <button id="cancelFisaFz" type="button" class="btn btn-outline-danger">
+      <i class="bi bi-x-circle"></i> Anulează
+    </button>
+  </div>
+</div>
+  </div>
+</form>
+
+
+
+
+
+
+<!-- <form id="clientForm" class="mt-3" style="display: none;" method="post" action="/submit_form">
+  <label for="clients">Selectează clienți:</label>
+  <select name="clients" id="clients" class="form-select" multiple>
+    {% for client in clienti %}
+      <option value="{{ client.id }}">{{ client.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary mt-2">Trimite</button>
+</form> -->
+
+
+<form method="POST">
   <div class="row g-4">
     <div class="col-md-6 col-lg-4">
       <label for="start-date" class="form-label">Perioada de început</label>
@@ -613,12 +767,12 @@ input[type="checkbox"]:checked::after {
     <button class="btn btn-outline-success px-4 py-2 shadow-sm d-flex align-items-center gap-2 text-dark" name="action" value="gl">
       <i class="bi bi-diagram-3 fs-5"></i> GL Mapat
     </button>
-    <button class="btn btn-outline-warning px-4 py-2 shadow-sm d-flex align-items-center gap-2 text-dark" name="action" value="cl">
+    <button id="btn-fisa-cl" class="btn btn-outline-warning px-4 py-2 shadow-sm d-flex align-items-center gap-2 text-dark" name="action" value="cl3">
   <i class="bi bi-person-check fs-5"></i> Clienți
 </button>
 
 <!-- Furnizori - Outline roșu -->
-<button class="btn btn-outline-danger px-4 py-2 shadow-sm d-flex align-items-center gap-2 text-dark" name="action" value="fr">
+<button class="btn btn-outline-danger px-4 py-2 shadow-sm d-flex align-items-center gap-2 text-dark" name="action" value="fr3">
   <i class="bi bi-truck fs-5"></i> Furnizori
 </button>
    
@@ -692,6 +846,11 @@ input[type="checkbox"]:checked::after {
 
   <!-- Custom JavaScript -->
 <script>
+
+  //  document.getElementById("showFormBtn").addEventListener("click", function() {
+  //   const form = document.getElementById("clientForm");
+  //   form.style.display = form.style.display === "none" ? "block" : "none";
+  // });
 const startInput = document.getElementById('start-date');        // input luna inițială (selector original)
 const endInput = document.getElementById('end-date');            // input luna finală (selector original)
 
@@ -758,6 +917,79 @@ endInput.addEventListener('input', updateDateFields);
       $('#selectCont6, #selectCont7').hide();
       $('#dropdown-container').slideUp();
     });
+      });
+//------------------------------------------------------------------------------------------------------------
+
+const startInputCl = document.getElementById('start-date');        // input luna inițială (selector original)
+const endInputCl = document.getElementById('end-date');            // input luna finală (selector original)
+
+const displayStartCl = document.getElementById('start-date-fisaCl'); // input readonly vizibil
+const displayEndCl = document.getElementById('end-date-fisaCl');     // input readonly vizibil
+
+function updateDateFieldsCl() {
+    
+  const startCl = startInputCl.value;
+  const endCl = endInputCl.value;
+
+  displayStartCl.value = startCl || '-';
+  displayEndCl.value = endCl || '-';
+}
+
+// ascultă modificări pe selectorii originali
+startInputCl.addEventListener('input', updateDateFieldsCl);
+endInputCl.addEventListener('input', updateDateFieldsCl);
+
+  $(document).ready(function () {
+    function initSelectWithSelectAll(selector) {
+      $(selector).select2({
+        placeholder: "Selectează conturi",
+        allowClear: true,
+        width: '100%'
+      });
+
+      $(selector).on('select2:select', function (e) {
+        if (e.params.data.id === 'select_all') {
+          let allOptions = $(selector).find('option').not('[value="select_all"]');
+          allOptions.prop('selected', true);
+          $(selector).val(allOptions.map(function () {
+            return this.value;
+          }).get()).trigger('change');
+        }
+      });
+    }
+
+    initSelectWithSelectAll('#conturiCl');
+    // initSelectWithSelectAll('#conturi7');
+
+    $('#btn-fisa-cl').on('click', function (e) {
+      e.preventDefault();
+      $('#dropdown-container-cl').slideDown();
+    });
+
+    $('#checkContCl').on('change', function () {
+      $('#selectContCl').toggle(this.checked);
+      if (!this.checked) {
+        $('#conturiCl').val(null).trigger('change');
+      }
+    });
+
+    // $('#checkCont7').on('change', function () {
+    //   $('#selectCont7').toggle(this.checked);
+    //   if (!this.checked) {
+    //     $('#conturi7').val(null).trigger('change');
+    //   }
+    // });
+
+    // 🔄 Buton "Anulează" — resetează tot
+    $('#cancelFisaCl').on('click', function () {
+      $('#checkContCl').prop('checked', false);
+      $('#conturiCl').val(null).trigger('change');
+      $('#selectContCl').hide();
+      $('#dropdown-container-cl').slideUp();
+    });
+
+ });
+
 
     // ✅ Buton "Generează Fișa de Cont" — exemplu simplu
     // $('#genereazaFisa').on('click', function () {
@@ -771,7 +1003,99 @@ endInput.addEventListener('input', updateDateFields);
     //     // Aici poți face submit, ajax, etc.
     //   }
     // });
-  });
+
+//------------------------------------------------------------------------------------------------------------
+/*
+const startInputFz = document.getElementById('start-date');        // input luna inițială (selector original)
+const endInputFz = document.getElementById('end-date');            // input luna finală (selector original)
+
+const displayStartFz = document.getElementById('start-date-fisaFz'); // input readonly vizibil
+const displayEndFz = document.getElementById('end-date-fisaFz');     // input readonly vizibil
+
+function updateDateFieldsFz() {
+    
+  const startFz = startInputFz.value;
+  const endFz = endInputFz.value;
+
+  displayStartFz.value = startFz || '-';
+  displayEndFz.value = endFz || '-';
+}
+
+// ascultă modificări pe selectorii originali
+startInputFz.addEventListener('input', updateDateFieldsFz);
+endInputFz.addEventListener('input', updateDateFieldsFz);
+
+  $(document).ready(function () {
+    function initSelectWithSelectAll(selector) {
+      $(selector).select2({
+        placeholder: "Selectează conturi",
+        allowClear: true,
+        width: '100%'
+      });
+
+      $(selector).on('select2:select', function (e) {
+        if (e.params.data.id === 'select_all') {
+          let allOptions = $(selector).find('option').not('[value="select_all"]');
+          allOptions.prop('selected', true);
+          $(selector).val(allOptions.map(function () {
+            return this.value;
+          }).get()).trigger('change');
+        }
+      });
+    }
+
+    initSelectWithSelectAll('#conturiFz');
+    // initSelectWithSelectAll('#conturi7');
+
+    $('#btn-fisa-fz').on('click', function (e) {
+      e.preventDefault();
+      $('#dropdown-container-cl').slideDown();
+    });
+
+    $('#checkContFz').on('change', function () {
+      $('#selectContFz').toggle(this.checked);
+      if (!this.checked) {
+        $('#conturiFz').val(null).trigger('change');
+      }
+    });
+
+    // $('#checkCont7').on('change', function () {
+    //   $('#selectCont7').toggle(this.checked);
+    //   if (!this.checked) {
+    //     $('#conturi7').val(null).trigger('change');
+    //   }
+    // });
+
+    // 🔄 Buton "Anulează" — resetează tot
+    $('#cancelFisaFz').on('click', function () {
+      $('#checkContFz').prop('checked', false);
+      $('#conturiFz').val(null).trigger('change');
+      $('#selectContFz').hide();
+      $('#dropdown-container-fz').slideUp();
+    });
+
+ });
+
+
+    // ✅ Buton "Generează Fișa de Cont" — exemplu simplu
+    // $('#genereazaFisa').on('click', function () {
+    //   const c6 = $('#conturi6').val() || [];
+    //   const c7 = $('#conturi7').val() || [];
+
+    //   if (!c6.length && !c7.length) {
+    //     alert("Selectează cel puțin un cont pentru a genera fișa.");
+    //   } else {
+    //     alert("Generare fișă pentru:\nConturi 6: " + c6.join(', ') + "\nConturi 7: " + c7.join(', '));
+    //     // Aici poți face submit, ajax, etc.
+    //   }
+    // });
+
+*/
+
+
+
+
+
 
 document.getElementById('fisaForm').addEventListener('submit', function(e) {
     e.preventDefault(); // oprește submitul clasic
@@ -792,6 +1116,28 @@ document.getElementById('fisaForm').addEventListener('submit', function(e) {
         console.error('Eroare:', error);
     });
 });
+document.getElementById('fisaFormCl').addEventListener('submit', function(e) {
+    e.preventDefault(); // oprește submitul clasic
+
+    const formData = new FormData(this);
+
+    fetch("{{ url_for('views.genereaza_sold_clienti') }}", {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.json()) // sau .text() dacă serverul returnează altceva
+    .then(data => {
+        console.log('Răspuns de la server:', data);
+        // Redirect la pagina dorită (poți schimba URL-ul cu ce vrei)
+        window.location.href = "{{ url_for('views.generate_reports_processing') }}";
+    })
+    .catch(error => {
+        console.error('Eroare:', error);
+    });
+});
+
+
+
 
 function exportTableToExcel(tableID, filename = 'export') {
     const table = document.getElementById(tableID);

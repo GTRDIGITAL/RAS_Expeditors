@@ -1,4 +1,5 @@
 import mysql.connector as mysql
+from .views import abc
 
 def procedura_mapare():
     conn = mysql.connect(
