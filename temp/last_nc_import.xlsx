@@ -1,0 +1,3 @@
+BR,Statutory_GL,Journal,Open_Item,File_Ref,Date,Month,Year,Amount,data_Description,Post_Date,TC,Foreign Amount,Foreign Currency,GCI,Customer Name,JT,rowNumber,timestamp,User_id,User_name,User_email
+222,401,EE085260,EE085260,EE085260,2025-06-01,6,2025,829.06,FACT LIPSA PANATL BU,2025-06-04 12:28:09,,,,,,EXT,1,2025-07-23 09:33:33,16,Alina Boarca,alina.boarca@ro.gt.com
+222,628-10,EE085260,EE085260,EE085260,2025-06-01,6,2025,-829.06,FACT LIPSA PANATL BU,2025-06-04 12:28:09,,,,,,EXT,2,2025-07-23 09:33:33,16,Alina Boarca,alina.boarca@ro.gt.com

@@ -175,7 +175,7 @@ body {
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">
+      <a class="navbar-brand" href="{{ url_for('views.main',  email=session['email']) }}">
         <img src="static/unnamed.jpg" alt="Logo" class="logo-img">
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -184,7 +184,7 @@ body {
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link" href="/">Dashboard</a>
+            <a class="nav-link" href="{{ url_for('views.main',  email=session['email']) }}">Dashboard</a>
           </li>
 
           <!-- Dropdown Utilizatori -->
@@ -194,8 +194,9 @@ body {
         Utilizatori
     </a>
     <ul class="dropdown-menu" aria-labelledby="navbarDropdown" style="position: absolute;">
-        <li><a class="dropdown-item" href="/create-user">Creare utilizator nou</a></li>
-        <li><a class="dropdown-item" href="/view-users">Afisare și gestionare utilizatori</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('auth.create_new_user') }}">Creare utilizator nou</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('views.users',  email=session['email']) }}">Afisare și gestionare utilizatori</a></li>
+
     </ul>
 </li>
 {% endif %}
@@ -217,8 +218,8 @@ body {
               <i class="fas fa-user"></i> <span id="username">{{user_name}}</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end" style="position: absolute;"aria-labelledby="userDropdown">
-              <li><a class="dropdown-item" href="/change_password"><i class="fas fa-key"></i> Change Password</a></li>
-              <li><a class="dropdown-item" href="/"><i class="fas fa-sign-out-alt"></i> Sign Out</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}"><i class="fas fa-key"></i> Change Password</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-out-alt"></i> Sign Out</a></li>
             </ul>
           </li>
         </ul>
@@ -237,42 +238,37 @@ body {
     </div>
 
     <!-- Dashboard Cards -->
-    <div class="row">
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-header">
-            Creare Utilizator
-          </div>
-          <div class="card-body">
-            <p>Adaugă noi utilizatori pentru sistemul de contabilitate.</p>
-            <a href="{{ url_for('auth.create_new_user', email=session['email']) }}" class="btn btn-primary">Crează utilizator</a>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-header">
-            Generare Raport
-          </div>
-          <div class="card-body">
-            <p>Generează rapoarte financiare pe diferite perioade.</p>
-            <a href="generate-report.html" class="btn btn-success">Generează Raport</a>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-header">
-            Transformă & Încarcă GL
-          </div>
-          <div class="card-body">
-            <p>Transformă și încarcă datele pentru general ledger.</p>
-            <a href="transform-load-gl.html" class="btn btn-warning">Încarcă GL</a>
-          </div>
-        </div>
-      </div>
+    <div class="row row-cols-1 row-cols-md-4 g-4">
+  <div class="card" style="min-width: 300px;">
+    <div class="card-header">Creare Utilizator</div>
+    <div class="card-body">
+      <p>Adaugă noi utilizatori pentru sistemul de contabilitate.</p>
+      <a href="{{ url_for('auth.create_new_user', email=session['email']) }}" class="btn btn-primary">Crează utilizator</a>
     </div>
   </div>
+  <div class="card" style="min-width: 300px;">
+    <div class="card-header">Generare Raport</div>
+    <div class="card-body">
+      <p>Generează rapoarte financiare pe diferite perioade.</p>
+      <a href="/generate_reports" class="btn btn-success">Generează Raport</a>
+    </div>
+  </div>
+  <div class="card" style="min-width: 300px;">
+    <div class="card-header">Generare Balanța</div>
+    <div class="card-body">
+      <p>Generează balanța lunară.</p>
+      <a href="/generate_tb" class="btn btn-info">Generează Balanta</a>
+    </div>
+  </div>
+  <div class="card" style="min-width: 300px;">
+    <div class="card-header">Transformă & Încarcă GL</div>
+    <div class="card-body">
+      <p>Transformă și încarcă datele pentru general ledger.</p>
+      <a href="/load_transform" class="btn btn-warning">Încarcă GL</a>
+    </div>
+  </div>
+</div>
+
 
   <!-- Powered by Grant Thornton -->
   <div class="powered-by">

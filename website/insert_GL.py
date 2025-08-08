@@ -148,6 +148,8 @@ def import_into_db(file):
         # Citește fișierul Excel
         df = pd.read_excel(file)
         df.columns = df.columns.str.strip()
+        print(df.columns,"--------------------")
+        df = df[df['JT'] != 'EXT']
         print("\n==== Coloane din fisierul Excel incarcat ====")
         print(list(df.columns))
         print("===========================================\n")
@@ -193,7 +195,7 @@ def import_into_db(file):
 
         # Interogare INSERT
         insert_query = """
-            INSERT INTO general_ledger_test (
+            INSERT INTO general_ledger (
                 JT, GL, BR, statutory_gl, Prod, GL_Type, GL_Group, GL_Subtype, GL_Cat,
                 Journal, GCI, GCI_Br, Company, Open_Item, File_Ref, Date,
                 Month, Year, TC, Amount, Foreign_Amount, Foreign_Currency,
@@ -243,20 +245,24 @@ def import_into_db(file):
         if batch:
             cursor.executemany(insert_query, batch)
             total_inserted += len(batch)
+            
 
         # Commit o singură dată
+        
         conn.commit()
         cursor.close()
         conn.close()
+        print(f"✅ Inserarea a fost finalizată. {total_inserted} rânduri au fost inserate.")
 
         return {
             "status": "success",
             "message": f"{total_inserted} rânduri au fost inserate cu succes."
         }
     except Exception as e:
+        print(e)
         return {
             "status": "error",
-            "message": str(e)
+            "message": str(e)+" Fișierul nu a putut fi încărcat."
         }
 
-# import_into_db('D:\\Projects\\21. SAF-T Expeditors\\2. Fisiere input\\1\\REGISTRU JURNAL.xlsx')  # Exemplu de apelare a funcției
+# import_into_db('D:\\Projects\\35. GIT RAS\\RAS_Expeditors\\uploads\\reg jurnal 0125  new.xlsx')  # Exemplu de apelare a funcției

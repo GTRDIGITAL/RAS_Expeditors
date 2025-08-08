@@ -13,20 +13,135 @@
       crossorigin="anonymous"
     ></script>
     <style>
+
+
+
+
+      #dropdown-container {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    max-width: 600px;
+  }
+
+  /* Etichetele (label) mai vizibile */
+  #dropdown-container label {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 6px;
+    display: inline-block;
+    color: #343a40;
+  }
+
+  /* Spacing între cele două select-uri */
+  #dropdown-container select {
+    margin-bottom: 12px;
+  }
+
+  /* Select2 custom theme */
+  .select2-container--default .select2-selection--multiple {
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 4px 8px;
+    min-height: 42px;
+    background-color: #fff;
+    transition: all 0.2s ease;
+  }
+
+  .select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+
+  .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #0d6efd;
+    border: none;
+    color: #fff;
+    padding: 2px 8px;
+    margin-top: 4px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+
+  /* Placeholder color */
+  .select2-container--default .select2-selection--multiple .select2-search__field::placeholder {
+    color: #adb5bd;
+  }
+
+  /* Responsive */
+  @media (max-width: 576px) {
+    #dropdown-container {
+      padding: 15px;
+    }
+    #dropdown-container label {
+      font-size: 0.95rem;
+    }
+  }
+
+  #dropdown-container {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    max-width: 600px;
+  }
+
+  .form-check-label {
+    font-weight: 600;
+  }
+
+  .btn {
+    min-width: 180px;
+  }
       body {
-        font-family: "Poppins", sans-serif;
-        background: linear-gradient(
-          135deg,
-          rgb(0, 0, 0) 30%,
-          rgba(114, 2, 2, 0.864) 50%,
-          rgb(0, 0, 0) 60%
-        );
-        color: #333;
-        margin: 0;
-        padding: 0;
-        background-size: cover;
-        background-attachment: fixed;
-      }
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, rgb(0, 0, 0) 30%, rgba(114, 2, 2, 0.864) 50%, rgb(0, 0, 0) 60%);
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-size: cover;
+      background-attachment: fixed;
+    }
+
+    .navbar {
+      background-color: #000;
+    }
+      div.dt-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  .dt-button {
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .dt-button:hover {
+    background-color: #0b5ed7;
+  }
+
+    .navbar-brand {
+      color: #fff;
+    }
+
+    .navbar-nav .nav-link {
+      color: #fff;
+    }
+
+    .navbar-nav .nav-link:hover {
+      background-color: #e74c3c;
+    }
       .container {
         margin-top: 40px;
       }
@@ -220,7 +335,7 @@
       }
 
       h2.text-center {
-        color: white;
+        color: rgb(0, 0, 0);
       }
 
       .user-container {
@@ -238,89 +353,59 @@
     </style>
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">
-          <img src="static/unnamed.jpg" alt="Logo" class="logo-img" />
-        </a>
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="/main">Dashboard</a>
-            </li>
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="{{ url_for('views.main',  email=session['email']) }}">
+        <img src="static/unnamed.jpg" alt="Logo" class="logo-img">
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('views.main',  email=session['email']) }}">Dashboard</a>
+          </li>
 
-            <!-- Dropdown Utilizatori -->
-            {% if is_admin %}
-            <li class="nav-item dropdown" id="usersDropdown">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                id="navbarDropdown"
-                role="button"
-              >
-                Utilizatori
-              </a>
-              <ul
-                class="dropdown-menu"
-                aria-labelledby="navbarDropdown"
-                style="position: absolute"
-              >
-                <li>
-                  <a class="dropdown-item" href="/create-user"
-                    >Creare utilizator nou</a
-                  >
-                </li>
-                <li>
-                  <a class="dropdown-item" href="/view-users"
-                    >Afisare și gestionare utilizatori</a
-                  >
-                </li>
-              </ul>
-            </li>
-            {% endif %}
+          <!-- Dropdown Utilizatori -->
+          {% if is_admin %}
+<li class="nav-item dropdown" id="usersDropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button">
+        Utilizatori
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="navbarDropdown" style="position: absolute;">
+        <li><a class="dropdown-item" href="{{ url_for('auth.create_new_user') }}">Creare utilizator nou</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('views.users',  email=session['email']) }}">Afisare și gestionare utilizatori</a></li>
 
-            <li class="nav-item">
-              <a class="nav-link" href="generate-report.html"
-                >Generare Rapoarte</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="transform-load-gl.html"
-                >Transformă & Încarcă GL</a
-              >
-            </li>
+    </ul>
+</li>
+{% endif %}
 
-            <!-- Dropdown Utilizator Autentificat -->
-            <li class="nav-item dropdown" id="userDropdown">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                id="userDropdown"
-                role="button"
-              >
-                <i class="fas fa-user"></i>
-                <span id="username">{{user_name}}</span>
-              </a>
-              <ul class="dropdown-menu dropdown-menu-end" style="position: absolute;"aria-labelledby="userDropdown">
-                <li><a class="dropdown-item" href="/"><i class="fas fa-key"></i> Change Password</a></li>
-                <li><a class="dropdown-item" href="/"><i class="fas fa-sign-out-alt"></i> Sign Out</a></li>
-              </ul>
-            </li>
-          </ul>
-        </div>
+
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('views.generate_reports', email=session['email']) }}">Generare Rapoarte</a>
+          </li>
+            <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('views.generate_monthlyTB', email=session['email']) }}">Generare Monthly TB</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('views.load_transform', email=session['email']) }}">Transformă & Încarcă GL</a>
+          </li>
+
+          <!-- Dropdown Utilizator Autentificat -->
+          <li class="nav-item dropdown" id="userDropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button">
+              <i class="fas fa-user"></i> <span id="username">{{user_name}}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" style="position: absolute;"aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}"><i class="fas fa-key"></i> Change Password</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-out-alt"></i> Sign Out</a></li>
+            </ul>
+          </li>
+        </ul>
       </div>
-    </nav>
+    </div>
+  </nav>
     <div class="container">
 
       <div class="card">
@@ -386,7 +471,37 @@
                 alert("Utilizatorul nu a fost sters cu succes.");
             });
         }
-        
+                document.addEventListener("DOMContentLoaded", function () {
+      // Dropdown pentru Utilizatori
+      let usersDropdown = document.getElementById("usersDropdown");
+  
+      if (usersDropdown) {
+        usersDropdown.addEventListener("mouseenter", function () {
+          let menu = this.querySelector(".dropdown-menu");
+          menu.classList.add("show");  // Afișează dropdown-ul
+        });
+  
+        usersDropdown.addEventListener("mouseleave", function () {
+          let menu = this.querySelector(".dropdown-menu");
+          menu.classList.remove("show");  // Ascunde dropdown-ul
+        });
+      }
+  
+      // Dropdown pentru Utilizator Autentificat
+      let userDropdown = document.getElementById("userDropdown");
+  
+      if (userDropdown) {
+        userDropdown.addEventListener("mouseenter", function () {
+          let menu = this.querySelector(".dropdown-menu");
+          menu.classList.add("show");  // Afișează dropdown-ul
+        });
+  
+        userDropdown.addEventListener("mouseleave", function () {
+          let menu = this.querySelector(".dropdown-menu");
+          menu.classList.remove("show");  // Ascunde dropdown-ul
+        });
+      }
+    });
         
         
     </script>

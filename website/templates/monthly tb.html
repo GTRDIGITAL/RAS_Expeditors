@@ -711,9 +711,11 @@ input[type="checkbox"]:checked::after {
     <input type="month" class="form-control form-control-lg rounded-3 shadow-sm" id="start-date" name="start-date" required>
   </div>
    <div class="d-flex flex-wrap gap-3">
-    <button type="submit" class="btn btn-outline-danger px-4 py-2 shadow-sm d-flex align-items-center gap-2" name="action" value="tb" id="monthly-balance-btn">
-      <i class="bi bi-bar-chart-steps fs-5"></i> Generare Balanța lunară
-    </button>
+  <button type="submit" class="btn btn-outline-danger px-4 py-2 shadow-sm d-flex align-items-center gap-2" name="action" value="tb" id="monthly-balance-btn">
+  <span class="spinner-border spinner-border-sm d-none" id="monthly-balance-spinner" role="status" aria-hidden="true"></span>
+  <i class="bi bi-bar-chart-steps fs-5"></i> Generare Balanța lunară
+</button>
+
   </div>
 <div class="d-flex flex-wrap gap-3 justify-content-center align-items-center">
   <div class="separator-sau">Balanta perioada</div>
@@ -745,9 +747,11 @@ input[type="checkbox"]:checked::after {
       </div>
     </div>
     <div class="mt-3">
-      <button type="submit" class="btn btn-primary px-4 py-2 shadow-sm d-flex align-items-center gap-2" name="action" value="generate-period">
-        <i class="bi bi-calendar2-range fs-5"></i> Generează balanța la perioadă
-      </button>
+    <button type="submit" class="btn btn-primary px-4 py-2 shadow-sm d-flex align-items-center gap-2" name="action" value="generate-period" id="generate-period-btn">
+  <span class="spinner-border spinner-border-sm d-none" id="generate-period-spinner" role="status" aria-hidden="true"></span>
+  <i class="bi bi-calendar2-range fs-5"></i> Generează balanța la perioadă
+</button>
+
     </div>
   </div>
 
@@ -820,51 +824,90 @@ input[type="checkbox"]:checked::after {
   <script>
 let activeFilters = {};  // Stocăm filtrele active pentru fiecare coloană
 function exportTableToExcel(tableID, filename = 'export') {
-    const table = document.getElementById(tableID);
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const table = document.getElementById(tableID);
+  if (!table) return alert('Tabelul nu a fost găsit');
 
-    const blob = new Blob([wbout], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  // Extrage header-ele (numele coloanelor)
+  const headers = Array.from(table.querySelectorAll('thead tr th')).map(th => th.textContent.trim());
+
+  // Extrage rândurile de date
+  const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => {
+    const cells = Array.from(tr.querySelectorAll('td'));
+    let obj = {};
+    cells.forEach((td, i) => {
+      obj[headers[i]] = td.textContent.trim();
     });
+    return obj;
+  });
 
-    // Salvare locală DOAR dacă filename NU începe cu 'GL' (case insensitive)
-    if (!filename.toLowerCase().startsWith('gl')) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename + '.xlsx';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
+  // Creează worksheet din JSON
+  const ws = XLSX.utils.json_to_sheet(rows);
 
-    // Trimite la Flask
-    const file = new File([blob], filename + '.xlsx', {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    fetch('/trimite-mail-export', {
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'success') {
-        alert('Email trimis cu succes!');
-      } else {
-        alert('Eroare: ' + data.message);
+  // Găsește indexul coloanei GL în headers
+  const glColIndex = headers.indexOf('GL');
+  if (glColIndex >= 0) {
+    // Convertim coloana GL în tip text (string)
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      // Obținem adresa celulei, ex: 'A2', 'B3' etc.
+      const cellAddress = XLSX.utils.encode_cell({ c: glColIndex, r: R + 1 }); // +1 pentru că rândul 0 e header-ul
+      const cell = ws[cellAddress];
+      if (cell) {
+        // Forțăm tipul celulei la string
+        cell.t = 's';
+        // Asigură-te că valoarea e string
+        cell.v = String(cell.v);
       }
-    })
-    .catch(err => {
-      console.error(err);
-      alert('A apărut o eroare.');
-    });
+    }
   }
+
+  // Crează workbook
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+  // Scrie workbook în binary array
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+  const blob = new Blob([wbout], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+
+  if (!filename.toLowerCase().startsWith('gl')) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Trimite la Flask
+  const file = new File([blob], filename + '.xlsx', {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  fetch('/trimite-mail-export', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      alert('Email trimis cu succes!');
+    } else {
+      alert('Eroare: ' + data.message);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('A apărut o eroare.');
+  });
+}
 
 document.addEventListener("DOMContentLoaded", function () {
   const headers = document.querySelectorAll(".filterable");
@@ -1172,6 +1215,39 @@ document.addEventListener("DOMContentLoaded", function () {
     periodStartInput.disabled = true;
     periodEndInput.disabled = true;
   });
+
+  let clickedButton = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  let clickedButton = null;
+
+  // Reține ce buton de submit a fost apăsat
+  document.querySelectorAll("form button[type='submit']").forEach(button => {
+    button.addEventListener("click", () => {
+      clickedButton = button;
+    });
+  });
+
+  // La submit, arată spinnerul DOAR pentru butonul apăsat
+  document.querySelectorAll("form").forEach(form => {
+    form.addEventListener("submit", () => {
+      if (!clickedButton) return;
+
+      if (clickedButton.id === "monthly-balance-btn") {
+        const spinner = document.getElementById("monthly-balance-spinner");
+        clickedButton.disabled = true;
+        spinner.classList.remove("d-none");
+      }
+
+      if (clickedButton.id === "generate-period-btn") {
+        const spinner = document.getElementById("generate-period-spinner");
+        clickedButton.disabled = true;
+        spinner.classList.remove("d-none");
+      }
+    });
+  });
+});
+
   </script>
 </body>
 </html>

@@ -221,6 +221,38 @@
   overflow-y: auto; /* Scroll pe verticală */
   transition: all 0.2s ease-in-out;
 }
+.dt-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-right: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.2s ease;
+}
+
+/* Excel */
+.buttons-excel {
+  background-color: #198754;
+  color: white;
+}
+
+.buttons-excel:hover {
+  background-color: #157347;
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+}
+
+/* CSV */
+.buttons-csv {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.buttons-csv:hover {
+  background-color: #0b5ed7;
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.1);
+}
 
 /* Hover pe dropdown */
 .dropdown-menu:hover {
@@ -666,6 +698,8 @@ input[type="checkbox"]:checked::after {
       </div>
     </div>
   </nav>
+<!-- 🔥 Pune asta în locul tuturor toasturilor tale existente -->
+<div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080"></div>
 
 <div id="historySidebar" class="extended" title="Istoric documente">
   <div class="sidebar-label">
@@ -713,8 +747,9 @@ input[type="checkbox"]:checked::after {
     {{ accordion_history('Istoric Balanțe Disponibile', 'bi-clock-history', luni_disponibile, 'Nu există balanțe înregistrate în sistem.', 'balantaAccordion') }}
 
     {{ accordion_history('Istoric GL Disponibile', 'bi-clock-history', luni_disponibile_gl, 'Nu există registre jurnale înregistrate în sistem.', 'glAccordion') }}
-
-  </div>
+       {{ accordion_history('Istoric Sold Clienti', 'bi-clock-history', luni_disponibile_clienti, 'Nu există solduri clienti înregistrate în sistem.', 'clAccordion') }}
+  {{ accordion_history('Istoric Sold Furnizori', 'bi-clock-history', luni_disponibile_furnizori, 'Nu există solduri furnizori înregistrate în sistem.', 'fzAccordion') }}
+      </div>
 </div>
  
   <div class="container">
@@ -731,6 +766,7 @@ input[type="checkbox"]:checked::after {
           <div class="nav-links">
             <a href="javascript:void(0);" onclick="toggleSection('manual-import')" class="btn btn-outline-success">Manual import</a>
             <a href="javascript:void(0);" onclick="toggleSection('periode-mapping')" class="btn btn-outline-primary">Mapare GL prin Perioadă</a>
+            <a href="javascript:void(0);" onclick="toggleSection('delete-gl')" class="btn btn-outline-primary">Stergere</a>
             <a href="javascript:void(0);" onclick="toggleSection('add-entry')" class="btn btn-outline-warning">Adăugare Notă Contabilă Manual</a>
             <a href="javascript:void(0);" onclick="toggleSection('import-nc-section')" class="btn btn-outline-warning">Import Notă Contabilă</a>
             <a href="javascript:void(0);" onclick="toggleSection('show-all')" class="btn btn-outline-warning">Istoric si editare note contabile</a>
@@ -779,10 +815,145 @@ input[type="checkbox"]:checked::after {
     #uploadButton:disabled {
     cursor: not-allowed;
 }
+.msg-box {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+/* Spinner minimalist */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 3px solid rgba(0,0,0,0.2);
+  border-top-color: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mesaje succes / eroare */
+.text-success {
+  color: green;
+}
+
+.text-danger {
+  color: red;
+}
 
 #importButton:disabled {
     cursor: not-allowed;
 }
+/* Container pentru centru absolut */
+#container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #fafafa;
+  box-sizing: border-box;
+}
+
+/* Mesaj ca card elegant, centrat absolut */
+.msg-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 320px;
+  max-width: 420px;
+  padding: 18px 24px;
+  padding-top: 20px !important;
+  border-radius: 14px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-weight: 600;
+  font-size: 2rem!important;
+  background-color: rgba(255 255 255 / 0.95);
+  color: #333;
+  user-select: none;
+  opacity: 0;
+  animation: fadeInUp 0.4s forwards;
+  letter-spacing: 0.03em;
+}
+
+/* Culori mai soft și elegante */
+.text-success {
+  border-left: 6px solid #2a9d8f;
+  color: #264653;
+  background-color: #e0f2f1;
+  font-size: large;
+}
+
+.text-danger {
+  border-left: 6px solid #e76f51;
+  color: #7b2d26;
+  background-color: #fce8e6;
+  font-size: large;
+}
+
+.text-loading {
+  border-left: 6px solid #4a90e2;
+  color: #375a7f;
+  background-color: #e6f0fa;
+  font-size: large;
+}
+
+/* Animație fade in cu translateY pentru un efect modern */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Spinner minimalist cu linie subțire */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0,0,0,0.1);
+  border-top-color: #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Emoji discrete */
+.msg-box .emoji {
+  font-size: 1.4rem;
+  line-height: 1;
+  user-select: none;
+  flex-shrink: 0;
+}
+.dt-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background-color: #e9f2ff;
+  color: #0d3b66;
+  border: 1px solid #b6d4fe;
+  margin-right: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.dt-button:hover {
+  background-color: #cfe2ff;
+}
+
+
+
     </style>
     <!-- Clienti -->
     <div class="card mb-4" id="cl" style="display:none;">
@@ -790,7 +961,11 @@ input[type="checkbox"]:checked::after {
       <div class="card-body">
           <label class="label" for="periodeInputClienti">Introduceți perioada:</label>
           <input type="month" id="periodeInputClienti" class="form-control" placeholder="YYYY-MM">
+          <div id="soldClientiMsg" class="mt-2 text-success" style="display:none;"></div>
+           <div id="soldClientiMsg" style="display:none;" class="msg-box"></div>
           <button class="btn btn-primary mt-2" id="soldCLButton">Generare sold clienti</button>
+           
+
       </div>
       </div>
 
@@ -801,6 +976,8 @@ input[type="checkbox"]:checked::after {
       <div class="card-body">
           <label class="label" for="periodeInputFurnizori">Introduceți perioada:</label>
           <input type="month" id="periodeInputFurnizori" class="form-control" placeholder="YYYY-MM">
+            <div id="soldFurnizoriMsg" class="mt-2 text-success" style="display:none;"></div>
+           <div id="soldFurnizoriMsg" style="display:none;" class="msg-box"></div>
           <button class="btn btn-primary mt-2" id="soldFzButton">Generare sold furnizori</button>
       </div>
       </div>
@@ -813,10 +990,29 @@ input[type="checkbox"]:checked::after {
       <div class="card-body">
           <label class="label" for="periodeInput">Introduceți perioada:</label>
           <input type="month" id="periodeInput" class="form-control" placeholder="YYYY-MM">
-          <button class="btn btn-primary mt-2" id="mapareGLButton">Mapare GL</button>
+          <button class="btn btn-primary mt-2" id="mapareGLButton">
+  <span class="spinner-border spinner-border-sm me-1 d-none" id="mapareSpinner" role="status" aria-hidden="true"></span>
+  Mapare GL
+</button>
       </div>
       </div>
-  
+  <div class="card mb-4" id="delete-gl" style="display:none;">
+  <div class="card-header">Ștergere GL prin Perioadă</div>
+  <div class="card-body">
+    <label class="label" for="deleteGLPerioadaInput">Introduceți perioada:</label>
+    <input type="month" id="deleteGLPerioadaInput" class="form-control" placeholder="YYYY-MM">
+
+    <!-- Buton Ștergere GL -->
+    <button class="btn btn-danger mt-2" id="deleteGLButton">
+      <span class="spinner-border spinner-border-sm me-1 d-none" id="deleteGLSpinner" role="status" aria-hidden="true"></span>
+      Șterge GL
+    </button>
+
+    <!-- Feedback mesaje -->
+    <div id="deleteGLFeedback" class="mt-3 text-success d-none">GL șters cu succes.</div>
+  </div>
+</div>
+
   <div class="card mb-4" id="show-all" style="display:none;">
     <div class="card-header">Istoric Note Contabile</div>
     <div class="card-body">
@@ -829,20 +1025,23 @@ input[type="checkbox"]:checked::after {
       <button class="btn btn-primary mt-2" onclick="extractNotes()">Extrage Note</button>
       
       <!-- Tabel cu notele contabile extrase -->
-      <table class="table mt-3" id="historical-table">
+      <div class="table-responsive">
+  <table class="table mt-3" id="historical-table">
+
         <thead>
           <tr>
-            <th>#</th>
+            <!-- <th>#</th>
             <th>Data</th>
             <th>Descriere</th>
             <th>Sumă</th>
-            <th>Acțiuni</th>
+            <th>Acțiuni</th> -->
           </tr>
         </thead>
         <tbody>
           <!-- Liniile tabelului vor fi populate din JavaScript -->
         </tbody>
-      </table>
+       </table>
+</div>
     </div>
   </div>
 
@@ -858,33 +1057,37 @@ input[type="checkbox"]:checked::after {
   </div>
 
   <div class="card-body">
-   <div> <a href="/static/Template_NC.xlsx" download class="btn btn-outline-primary btn-sm" title="Descarcă template Excel">
+  <div>
+    <a href="/static/Template_NC.xlsx" download class="btn btn-outline-primary btn-sm" title="Descarcă template Excel">
       <i class="bi bi-download me-1"></i> Template Excel
-    </a></div>
-    <label class="form-label" for="nc-file-upload">Încarcă fișier Excel:</label>
-    <input type="file" id="nc-file-upload" class="form-control">
-    
-    <span id="nc-file-name-display" style="display:none;">
-      <i class="fas fa-check-circle text-success me-1"></i> Fișier selectat
-    </span>
+    </a>
+  </div>
 
-    <!-- Progress Bar -->
-    <div class="progress mt-2" style="height: 20px;">
-      <div id="nc-upload-progress-bar" class="progress-bar" role="progressbar" style="width: 0%;" 
-           aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
-    </div>
+  <label class="form-label" for="nc-file-upload">Încarcă fișier Excel:</label>
+  <input type="file" id="nc-file-upload" class="form-control">
 
-    <div class="d-flex gap-2 mt-3">
-      <button class="btn btn-success" id="nc-upload-button" disabled data-toggle="tooltip" title="Alege un fișier de importat">
-        Upload fișier
-      </button>
-      <button class="btn btn-success" id="nc-import-button" data-toggle="tooltip" title="Importă în baza de date">
-        Importă în baza de date
-      </button>
+  <span id="nc-file-name-display" style="display:none;">
+    <i class="fas fa-check-circle text-success me-1"></i> Fișier selectat
+  </span>
+
+  <!-- Progress Bar -->
+  <div class="progress mt-2" style="height: 20px;">
+    <div id="nc-upload-progress-bar" class="progress-bar" role="progressbar"
+         style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+      0%
     </div>
   </div>
-</div>
 
+  <div class="d-flex gap-2 mt-3">
+    <button class="btn btn-success" id="nc-upload-button" disabled data-toggle="tooltip" title="Alege un fișier de importat">
+      Upload fișier
+    </button>
+    <button class="btn btn-success" id="nc-import-button" disabled data-toggle="tooltip" title="Importă în baza de date">
+      Importă în baza de date
+    </button>
+  </div>
+</div>
+</div>
   
 
   <div class="card mb-4" id="manual-import" style="display:none;">
@@ -902,7 +1105,10 @@ input[type="checkbox"]:checked::after {
     </div>
 
     <button class="btn btn-success mt-2" id="uploadButton" disabled data-toggle="tooltip" data-placement="top" title="Choose a file to import">Upload file</button>
-<button class="btn btn-success mt-2" id="importButton" data-toggle="tooltip" data-placement="top" title="Import into database">Import into database</button>
+<button class="btn btn-success mt-2" id="importButton" data-toggle="tooltip" data-placement="top" title="Import into database">
+  <span class="spinner-border spinner-border-sm me-1 d-none" id="importSpinner" role="status" aria-hidden="true"></span>
+  Import into database
+</button>
 </div>
 </div>
 
@@ -955,163 +1161,361 @@ input[type="checkbox"]:checked::after {
 </div>
 </div>
   <!-- Secțiunea 3: Adăugare Notă Contabilă -->
-  <div class="card mb-4"  id="add-entry" style="display:none;">
-    <div class="card-header">Adăugare Notă Contabilă</div>
-    <div class="card-body">
-        <form id="entryForm">
-            <!-- Secțiunea Date Document -->
-            <h5 class="mb-3">Date Document</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="entryNumber">Număr:</label>
-                        <input type="text" id="entryNumber" class="form-control" placeholder="Generat automat" disabled>
-                    </div>
-                    <div class="mb-2">
-                        <label class="label" for="date">Data:</label>
-                        <input type="date" id="date" class="form-control" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="label" for="journalType">Jurnal:</label>
-                        <select id="journalType" class="form-control">
-                            <option value="SI">Sale Invoice</option>
-                            <option value="MSC">Altele</option>
-                        </select>
-                    </div>
-                    <div class="mb-2">
-                        <label class="label" for="documentNumber">Nr document:</label>
-                        <input type="text" id="documentNumber" class="form-control" placeholder="Număr document" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="label" for="documentDate">Data document:</label>
-                        <input type="date" id="documentDate" class="form-control" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="label" for="documentType">Tip document:</label>
-                        <input type="text" id="documentType" class="form-control" placeholder="Tip document" required>
-                    </div>
-                </div>
+<div class="card mb-4" id="add-entry" style="display: none;">
+  <div class="card-header bg-dark text-white">Adăugare Înregistrare</div>
+  <div class="card-body">
+    <form id="entryForm">
+      <div class="row">
+        <!-- Coloana 1 -->
+        <div class="col-md-6">
+          <!-- Identificare -->
+          <h5 class="mt-3 mb-3 text-black">Identificare Document</h5>
+          <div class="mb-3">
+            <label for="BR" class="form-label">BR</label>
+            <input type="text" id="BR" name="BR" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="File_Ref" class="form-label">File Ref</label>
+            <input type="text" id="File_Ref" name="File_Ref" class="form-control">
+          </div>
 
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <input type="checkbox" id="modifiedNote">
-                        <label class="label" for="modifiedNote">Nota modificată</label>
-                    </div>
-                    <div class="mb-2">
-                        <label class="label" for="currency">Deviză:</label>
-                        <select id="currency" class="form-control" required>
-                            <option value="RON">RON</option>
-                            <option value="EUR">EUR</option>
-                            <option value="USD">USD</option>
-                        </select>
-                    </div>
-                    <div class="mb-2">
-                        <label class="label" for="profitCenter">Centru:</label>
-                        <input type="text" id="profitCenter" class="form-control" placeholder="Centru de profit/cost" required>
-                    </div>
-                </div>
-            </div>
+          <!-- Contabilitate -->
+          <h5 class="mt-4 mb-3 text-black">Date Contabile</h5>
+          <div class="mb-3">
+            <label for="Statutory_GL_D" class="form-label">Statutory GL Debit</label>
+            <input type="text" id="Statutory_GL_D" name="Statutory_GL_D" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="Statutory_GL_C" class="form-label">Statutory GL Credit</label>
+            <input type="text" id="Statutory_GL_C" name="Statutory_GL_C" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="Journal" class="form-label">Journal</label>
+            <input type="text" id="Journal" name="Journal" class="form-control" required readonly>
+            
+          </div>
+          
+          <div class="mb-3">
+            <label for="Open_Item" class="form-label">Open Item</label>
+            <input type="text" id="Open_Item" name="Open_Item" class="form-control">
+          </div>
 
-            <!-- Secțiunea Sume Document -->
-            <h5 class="mt-4 mb-3">Sume Document</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="debitAmount">Suma debit lei:</label>
-                        <input type="number" id="debitAmount" class="form-control" placeholder="0.00" required>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="creditAmount">Suma credit lei:</label>
-                        <input type="number" id="creditAmount" class="form-control" placeholder="0.00" required>
-                    </div>
-                </div>
-            </div>
+          <!-- Calendar -->
+          <h5 class="mt-4 mb-3 text-black">Date Calendaristice</h5>
+          <div class="mb-3">
+            <label for="Date" class="form-label">Data Document</label>
+            <input type="date" id="Date" name="Date" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="Post_Date" class="form-label">Data Postare</label>
+            <input type="date" id="Post_Date" name="Post_Date" class="form-control" required>
+          </div>
+        </div>
 
-            <!-- Secțiunea Conturi -->
-            <h5 class="mt-4 mb-3">Conturi Contabile</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="accountCode">Cont Debit:</label>
-                        <input type="text" id="accountCode" class="form-control" placeholder="Cont debit" required>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="accountCreditCode">Cont Credit (Contrapartida):</label>
-                        <input type="text" id="accountCreditCode" class="form-control" placeholder="Cont credit (contrapartida)" required>
-                    </div>
-                </div>
-            </div>
+        <!-- Coloana 2 -->
+        <div class="col-md-6">
+          <!-- Calendar continuare -->
+          <h5 class="mt-3 mb-3 text-transparent">.</h5> <!-- spațiu gol pt aliniere -->
+          <div class="mb-3">
+            <label for="Month" class="form-label">Lună</label>
+            <input type="number" id="Month" name="Month" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="Year" class="form-label">An</label>
+            <input type="number" id="Year" name="Year" class="form-control" required>
+          </div>
 
-            <!-- Secțiunea Date Partener -->
-            <h5 class="mt-4 mb-3">Date Partener</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="partner">Partener:</label>
-                        <input type="text" id="partner" class="form-control" placeholder="Partener" required>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="partnerTaxCode">Cod fiscal:</label>
-                        <input type="text" id="partnerTaxCode" class="form-control" placeholder="Cod fiscal partener" required>
-                    </div>
-                </div>
-            </div>
+          <!-- Valori -->
+          <h5 class="mt-4 mb-3 text-black">Valori & Devize</h5>
+          <div class="mb-3">
+  <label for="Amount" class="form-label">Suma Debit (lei)</label>
+  <input type="number" id="Amount" name="Amount" class="form-control" step="0.01" required>
+</div>
 
-            <!-- Secțiunea Descriere -->
-            <h5 class="mt-4 mb-3">Descriere și Detalii Suplimentare</h5>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="transactionDescription">Descriere tranzacție:</label>
-                        <input type="text" id="transactionDescription" class="form-control" placeholder="Descriere tranzacție" required>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-2">
-                        <label class="label" for="paymentMethod">Metodă plată:</label>
-                        <select id="paymentMethod" class="form-control" required>
-                            <option value="Cash">Cash</option>
-                            <option value="Transfer">Transfer bancar</option>
-                            <option value="Cheque">Cec</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
+<div class="mb-3">
+  <label for="Foreign_Amount" class="form-label">Suma Debit în valută</label>
+  <input type="number" id="Foreign_Amount" name="Foreign_Amount" class="form-control" step="0.01">
+</div>
 
-            <!-- Butoane de Acțiune -->
-            <button type="button" class="btn btn-warning" id="previewButton">Previzualizează document</button>
-        </form>
-    </div>
+<!-- Campuri blocate -->
+<div class="mb-3">
+  <label for="Credit_Amount" class="form-label">Suma Credit (lei)</label>
+  <input type="number" id="Credit_Amount" class="form-control" step="0.01" readonly>
+</div>
+
+<div class="mb-3">
+  <label for="Credit_Foreign_Amount" class="form-label">Suma Credit în valută</label>
+  <input type="number" id="Credit_Foreign_Amount" class="form-control" step="0.01" readonly>
+</div>
+          <div class="mb-3">
+            <label for="Currency" class="form-label">Currency</label>
+            <select id="Currency" name="Currency" class="form-control" >
+              <option value="">Selectează</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="GBP">GBP</option>
+              <option value="CNY">CNY</option>
+              <option value="HUF">HUF</option>
+              <option value="PLN">PLN</option>
+              <option value="AED">AED</option>
+              <option value="KWD">KWD</option>
+              <option value="SGD">SGD</option>
+              <option value="QAR">QAR</option>
+              <option value="KRW">KRW</option>
+              <option value="SEK">SEK</option>
+              <option value="CAD">CAD</option>
+              <option value="SAR">SAR</option>
+              <option value="AUD">AUD</option>
+              <option value="OMR">OMR</option>
+              <option value="HKD">HKD</option>
+              <option value="CZK">CZK</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Descriere & Client -->
+      <div class="row">
+        <div class="col-md-6">
+          <h5 class="mt-4 mb-3 text-black">Descriere și Coduri</h5>
+          <div class="mb-3">
+            <label for="data_Description" class="form-label">Descriere</label>
+            <input type="text" id="data_Description" name="data_Description" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label for="TC" class="form-label">TC</label>
+            <select id="TC" name="TC" class="form-control" >
+              <option value="">Selectează</option>
+              <option value="EU">EU</option>
+              <option value="S">S</option>
+              <option value="E">E</option>
+              <option value="Z">Z</option>
+              <option value="P">P</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mt-4 mb-3 text-black">Date Client</h5>
+          <div class="mb-3">
+            <label for="Customer_GCI" class="form-label">GCI</label>
+            <input type="text" id="Customer_GCI" name="Customer_GCI" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label for="Customer_Name" class="form-label">Nume Client</label>
+            <input type="text" id="Customer_Name" name="Customer_Name" class="form-control">
+          </div>
+        </div>
+      </div>
+
+      <!-- Buton -->
+      <div class="text-end mt-4">
+        <button type="button" class="btn btn-warning" id="previewButton">Previzualizează</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- Modal pentru previzualizare -->
-<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="previewModalLabel">Previzualizare Notă Contabilă</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="previewContent">
-                <!-- Preview content will be injected here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" style="background-color:#c0392b;"data-bs-dismiss="modal">Închide</button>
-                <button type="button" class="btn btn-primary" style="background-color:#388E3C">Salvează document</button>
-            </div>
-        </div>
+<div class="modal fade" id="previewModal" tabindex="-1">
+  <div class="modal-dialog modal-xl"> <!-- lățime mare -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Previzualizare Înregistrare</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
+      </div>
+      <div class="modal-body" id="previewContent">
+        <!-- Conținutul va fi injectat aici -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Închide</button>
+        <button type="button" class="btn btn-primary" id="savePreview">Salvează</button>
+
+      </div>
     </div>
+  </div>
 </div>
 
+<!-- <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+  <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        Documentul a fost salvat cu succes!
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Închide"></button>
+    </div>
+  </div>
+</div> -->
 
-  <div id="importStatus" style="display: none;">IMPORT STATUS</div>
-  <script>
+<!-- Modal Detalii -->
+<!-- Modal Detalii -->
+<!-- Modal Detalii -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0" style="background-color: #121212; color: #222;">
+      <div class="modal-header" style="border-bottom: 3px solid #e03e3e; background-color: #ffffff;">
+        <h5 class="modal-title d-flex align-items-center" id="detailsModalLabel" style="color: #000000; font-weight: 700;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#e03e3e" class="bi bi-card-list me-2" viewBox="0 0 16 16">
+            <path d="M14.5 3a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1h9.5zm0 3a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1h9.5zm0 3a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1h9.5z"/>
+            <circle cx="3" cy="3.5" r=".5"/>
+            <circle cx="3" cy="6.5" r=".5"/>
+            <circle cx="3" cy="9.5" r=".5"/>
+          </svg>
+          Detalii Notă
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Închide"></button>
+      </div>
+      <div class="modal-body" id="detailsModalBody" style="max-height: 60vh; overflow-y: auto; background-color: #fff; padding: 2rem; border-radius: 0 0 1rem 1rem; color: #222;">
+        <!-- Datele vor fi injectate aici -->
+      </div>
+      <div class="modal-footer" style="border-top: 3px solid #e03e3e; background-color: #ffffff;">
+        <button type="button" class="btn" data-bs-dismiss="modal" style="background-color: #e03e3e; color: white; font-weight: 600; border-radius: 0.5rem;">
+          Închide
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Editare -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border border-success">
+      <div class="modal-header" >
+        <h5 class="modal-title" style="color: red;" id="editModalLabel">Editează Înregistrarea</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Închide"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editForm" class="row g-3">
+          <!-- câmpurile se vor adăuga dinamic -->
+        </form>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+        <button type="button" class="btn btn-success" onclick="submitEdit()">Salvează Modificările</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Fundal alb, contur fin roșu, text negru */
+#editModal .modal-content {
+  background-color: #fff;
+  border: 2px solid #dc3545; /* roșu aprins */
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(220, 53, 69, 0.25);
+  color: #222;
+}
+
+/* Header alb cu text roșu și subțire */
+#editModal .modal-header {
+  background-color: #fff;
+  border-bottom: 2px solid #dc3545;
+  color: #dc3545;
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+/* Buton închidere negru */
+#editModal .btn-close {
+  filter: invert(20%) sepia(20%) saturate(400%) hue-rotate(0deg) brightness(50%) contrast(80%);
+  /* negru moale */
+}
+
+/* Body alb cu text negru */
+#editModal .modal-body {
+  background-color: #fff;
+  color: #222;
+  font-size: 1rem;
+  padding: 1.5rem 2rem;
+}
+
+/* Footer alb cu butoane stilizate */
+#editModal .modal-footer {
+  background-color: #fff;
+  border-top: 2px solid #dc3545;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Buton anulare - bordură roșie, text roșu, hover fundal roșu cu text alb */
+#editModal .btn-secondary {
+  color: #dc3545;
+  border: 2px solid #dc3545;
+  background-color: transparent;
+  font-weight: 600;
+  padding: 0.4rem 1.2rem;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+}
+#editModal .btn-secondary:hover {
+  background-color: #dc3545;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+}
+
+/* Buton salvează - fundal roșu, text alb, hover fundal negru */
+#editModal .btn-success {
+  background-color: #dc3545;
+  border: none;
+  font-weight: 700;
+  padding: 0.4rem 1.6rem;
+  border-radius: 6px;
+  transition: background-color 0.25s ease;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.4);
+}
+#editModal .btn-success:hover {
+  background-color: #222;
+  box-shadow: 0 4px 15px rgba(34, 34, 34, 0.7);
+}
+
+  #detailsModalBody table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1rem;
+  }
+
+  #detailsModalBody table tr {
+    background-color: #fefefe;
+    box-shadow: 0 0 12px rgba(224, 62, 62, 0.3);
+    border-radius: 14px;
+    transition: background-color 0.3s ease;
+  }
+
+  #detailsModalBody table tr:hover {
+    background-color: #ffe6e6;
+  }
+
+  #detailsModalBody table th {
+    text-align: left;
+    font-weight: 700;
+    color: #000000; /* rosu */
+    padding: 14px 20px;
+    width: 35%;
+    vertical-align: middle;
+    border: none;
+  }
+
+  #detailsModalBody table td {
+    padding: 14px 20px;
+    vertical-align: middle;
+    border: none;
+    color: #222;
+  }
+  .is-invalid {
+  border-color: #dc3545;
+  background-color: #f8d7da;
+}
+
+</style>
+
+
+  <!-- <div id="importStatus" style="display: none;">IMPORT STATUS</div> -->
+  <!-- <script>
 
 document.getElementById('mapareGLButton').addEventListener('click', function() {
         fetch('/start_mapare_gl', {method: 'POST'})
@@ -1301,7 +1705,7 @@ document.getElementById('mapareGLButton').addEventListener('click', function() {
   });
   
   
-  </script>
+  </script> -->
   <!-- Footer -->
   
 
@@ -1310,74 +1714,380 @@ document.getElementById('mapareGLButton').addEventListener('click', function() {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
 
   <!-- Custom JavaScript -->
+   <script>
+     const debitLei = document.getElementById('Amount');
+  const debitValuta = document.getElementById('Foreign_Amount');
+  const creditLei = document.getElementById('Credit_Amount');
+  const creditValuta = document.getElementById('Credit_Foreign_Amount');
+
+  function updateCreditFields() {
+    creditLei.value = -parseFloat(debitLei.value || 0);
+    creditValuta.value = -parseFloat(debitValuta.value || 0);
+  }
+
+  debitLei.addEventListener('input', updateCreditFields);
+  debitValuta.addEventListener('input', updateCreditFields);
+   
+   
+   
+   
+   
+   document.addEventListener("DOMContentLoaded", function () {
+  const fileInput = document.getElementById("fileUpload");
+  const uploadBtn = document.getElementById("uploadButton");
+  const importBtn = document.getElementById("importButton");
+  const fileNameDisplay = document.getElementById("fileNameDisplay");
+  const progressBar = document.getElementById("uploadProgressBar");
+
+  // Când se selectează fișierul
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length > 0) {
+      uploadBtn.disabled = false;
+      fileNameDisplay.style.display = "inline-block";
+    } else {
+      uploadBtn.disabled = true;
+      fileNameDisplay.style.display = "none";
+    }
+  });
+
+  // Upload fișier
+  uploadBtn.addEventListener("click", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    progressBar.style.width = "0%";
+    progressBar.innerText = "0%";
+    progressBar.classList.remove("bg-success", "bg-danger");
+
+    try {
+      const response = await fetch("/upload-gl", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.status === "ok") {
+        progressBar.style.width = "100%";
+        progressBar.innerText = "100%";
+        progressBar.classList.add("bg-success");
+        importBtn.disabled = false;
+        showToast("Fișierul a fost încărcat cu succes.", "success");
+      } else {
+        progressBar.classList.add("bg-danger");
+        showToast("Eroare la încărcare: " + result.message, "danger");
+      }
+    } catch (err) {
+      progressBar.classList.add("bg-danger");
+      showToast("Eroare la server: " + err.message, "danger");
+    }
+  });
+
+  // Import în baza de date
+  const importSpinner = document.getElementById("importSpinner");
+  importBtn.addEventListener("click", async () => {
+    importBtn.disabled = true;
+  importSpinner.classList.remove("d-none");
+    try {
+      const response = await fetch("/import-gl", {
+        method: "POST"
+      });
+
+      const result = await response.json();
+      if (result.status === "ok" || result.status === "success") {
+        showToast("Datele au fost importate cu succes în baza de date.", "success");
+      } else {
+        showToast("Eroare la import: " + result.message, "danger");
+      }
+    } catch (err) {
+      showToast("Eroare la server: " + err.message, "danger");
+    }
+    finally {
+    importSpinner.classList.add("d-none");
+    importBtn.disabled = false;
+  }
+  });
+});
+
+
+
+ document.getElementById("mapareGLButton").addEventListener("click", async () => {
+  const mapareBtn = document.getElementById("mapareGLButton");
+  const mapareSpinner = document.getElementById("mapareSpinner");
+  const periodeInput = document.getElementById("periodeInput").value;
+
+  if (!periodeInput) {
+    showToast("Vă rugăm să selectați o perioadă (YYYY-MM).", "danger");
+    return;
+  }
+
+  const [yearStr, monthStr] = periodeInput.split("-");
+  const year = parseInt(yearStr);
+  const month = parseInt(monthStr);
+
+  if (isNaN(year) || isNaN(month)) {
+    showToast("Perioadă invalidă.", "danger");
+    return;
+  }
+
+  mapareBtn.disabled = true;
+  mapareSpinner.classList.remove("d-none");
+
+  try {
+    const response = await fetch("/mapare-gl-perioada", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ month, year })
+    });
+
+    const result = await response.json();
+
+    if (result.status === "ok" || result.status === "success") {
+      showToast(result.message || "Maparea s-a finalizat cu succes.", "success");
+    } else {
+      showToast(result.message || "Eroare la mapare.", "danger");
+    }
+  } catch (error) {
+    showToast("Eroare la server: " + error.message, "danger");
+  } finally {
+    mapareSpinner.classList.add("d-none");
+    mapareBtn.disabled = false;
+  }
+});
+
+
+</script>
   <script>
+      document.getElementById('previewButton').addEventListener('click', function () {
+    const form = document.getElementById('entryForm');
+    const inputs = form.querySelectorAll('input, select, textarea');
     
+ let allFilled = true;
+
+inputs.forEach(field => {
+  const isEmpty = !field.value || field.value.trim() === '';
+
+  if (isEmpty && field.hasAttribute('required')) {
+    field.classList.add('is-invalid');
+    allFilled = false;
+  } else {
+    field.classList.remove('is-invalid');
+  }
+
+  // Dacă vrei să marchezi neobligatorii gol cu alt stil, fără să blochezi:
+  if (isEmpty && !field.hasAttribute('required')) {
+    field.classList.add('border-warning', 'bg-light');
+  } else {
+    field.classList.remove('border-warning', 'bg-light');
+  }
+});
+
+if (!allFilled) {
+  showToast("Atentie! Nu au fost completate toate câmpurile obligatorii!", "warning");
+  return;  // oprește execuția
+}
+
+
+    // Deschide modalul
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+
+    // Previzualizare tabel
+    const data = new FormData(form);
+    let html = '<table class="table table-bordered"><tbody>';
+    data.forEach((value, key) => {
+      html += `<tr><th>${key}</th><td>${value ? value : '<i>necompletat</i>'}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('previewContent').innerHTML = html;
+  });
+
+  // Curăță evidențierea când utilizatorul scrie
+  document.querySelectorAll('#entryForm input, #entryForm select').forEach(input => {
+    input.addEventListener('input', () => {
+      if (input.value && input.value.trim() !== '') {
+        input.classList.remove('border-warning', 'bg-light');
+      }
+    });
+  });
     // Selectăm butonul pentru previzualizare și modalul de previzualizare
-const previewButton = document.getElementById('previewButton');
-const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
-const previewContent = document.getElementById('previewContent');
+document.addEventListener('DOMContentLoaded', function () {
+  const previewModalEl = document.getElementById('previewModal');
+  const previewModal = new bootstrap.Modal(previewModalEl);
+  const saveButton = document.getElementById('savePreview');
+  const form = document.getElementById('entryForm');
+  const toastEl = document.getElementById('successToast');
+  const toast = new bootstrap.Toast(toastEl);
+  const toastMessageEl = document.getElementById('toastMessage');
 
-// Adăugăm un event listener pentru butonul de previzualizare
-previewButton.addEventListener('click', function() {
-    // Colectăm datele din formular
-    const entryNumber = document.getElementById('entryNumber').value;
-    const date = document.getElementById('date').value;
-    const journalType = document.getElementById('journalType').value;
-    const documentNumber = document.getElementById('documentNumber').value;
-    const documentDate = document.getElementById('documentDate').value;
-    const documentType = document.getElementById('documentType').value;
-    const modifiedNote = document.getElementById('modifiedNote').checked ? "Da" : "Nu";
-    const currency = document.getElementById('currency').value;
-    const profitCenter = document.getElementById('profitCenter').value;
-    const debitAmount = document.getElementById('debitAmount').value;
-    const creditAmount = document.getElementById('creditAmount').value;
-    const accountCode = document.getElementById('accountCode').value;
-    const accountCreditCode = document.getElementById('accountCreditCode').value;
-    const partner = document.getElementById('partner').value;
-    const partnerTaxCode = document.getElementById('partnerTaxCode').value;
-    const transactionDescription = document.getElementById('transactionDescription').value;
-    const paymentMethod = document.getElementById('paymentMethod').value;
+  // const toast = new bootstrap.Toast(toastEl);
 
-    // Creăm conținutul pentru modalul de previzualizare
-    const previewHtml = `
-        <p><strong>Număr Notă Contabilă:</strong> ${entryNumber}</p>
-        <p><strong>Data:</strong> ${date}</p>
-        <p><strong>Jurnal:</strong> ${journalType}</p>
-        <p><strong>Nr Document:</strong> ${documentNumber}</p>
-        <p><strong>Data Document:</strong> ${documentDate}</p>
-        <p><strong>Tip Document:</strong> ${documentType}</p>
-        <p><strong>Nota Modificată:</strong> ${modifiedNote}</p>
-        <p><strong>Deviză:</strong> ${currency}</p>
-        <p><strong>Centru de Profit:</strong> ${profitCenter}</p>
-        <p><strong>Suma Debit:</strong> ${debitAmount} ${currency}</p>
-        <p><strong>Suma Credit:</strong> ${creditAmount} ${currency}</p>
-        <p><strong>Cont Debit:</strong> ${accountCode}</p>
-        <p><strong>Cont Credit (Contrapartida):</strong> ${accountCreditCode}</p>
-        <p><strong>Partener:</strong> ${partner}</p>
-        <p><strong>Cod Fiscal Partener:</strong> ${partnerTaxCode}</p>
-        <p><strong>Descriere Tranzacție:</strong> ${transactionDescription}</p>
-        <p><strong>Metodă Plată:</strong> ${paymentMethod}</p>
-    `;
+  saveButton.addEventListener('click', async () => {
 
-    // Adăugăm conținutul în modal
+  const dataToSend = {
+    BR: document.getElementById('BR').value,
+    File_Ref: document.getElementById('File_Ref').value,
+    Statutory_GL_D: document.getElementById('Statutory_GL_D').value,  // cont debit
+    Statutory_GL_C: document.getElementById('Statutory_GL_C').value,  // cont credit
+    Journal: document.getElementById('Journal').value,
+    Open_Item: document.getElementById('Open_Item').value,
+    Date: document.getElementById('Date').value,
+    Post_Date: document.getElementById('Post_Date').value,
+    Month: document.getElementById('Month').value,
+    Year: document.getElementById('Year').value,
+    Amount: document.getElementById('Amount').value,
+    Foreign_Amount: document.getElementById('Foreign_Amount').value,
+    Credit_Amount: document.getElementById('Credit_Amount').value,  // suma credit lei
+    Credit_Foreign_Amount: document.getElementById('Credit_Foreign_Amount').value,  // suma credit valută
+    Currency: document.getElementById('Currency').value,
+    data_Description: document.getElementById('data_Description').value,
+    TC: document.getElementById('TC').value,
+    Customer_GCI: document.getElementById('Customer_GCI').value,
+    Customer_Name: document.getElementById('Customer_Name').value,
+  };
+
+  // Aici trimiți mai departe cu fetch/post
+
+
+  try {
+    const response = await fetch('/manual-nc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataToSend),
+    });
+
+    const responseData = await response.json();
+
+    if (responseData.status === 'ok') {
+      showToast(responseData.message, 'success');
+      previewModal.hide();
+      const previewModalInstance = bootstrap.Modal.getOrCreateInstance(previewModalEl);
+previewModalInstance.hide();
+//       const backdrop = document.querySelector('.modal-backdrop');
+// if (backdrop) {
+//   backdrop.remove();
+//   document.body.classList.remove('modal-open');
+//   document.body.style = ''; // în caz că stilul de scroll e blocat
+// }
+      form.reset();
+      await generateJournalCode(); 
+    } else {
+      showToast(responseData.message || 'Eroare la salvare!', 'danger');
+    }
+  } catch (error) {
+    showToast('Eroare la comunicarea cu serverul: ' + error.message, 'danger');
+  }
+});
+
+  // Preview modal
+  
+  const previewButton = document.getElementById('previewButton');
+  const inputs = form.querySelectorAll('input, select, textarea');
+  previewButton.addEventListener('click', function () {
+    let allFilled = true;
+
+inputs.forEach(field => {
+  const isEmpty = !field.value || field.value.trim() === '';
+
+  if (isEmpty && field.hasAttribute('required')) {
+    field.classList.add('is-invalid');
+    allFilled = false;
+  } else {
+    field.classList.remove('is-invalid');
+  }
+
+  // Dacă vrei să marchezi neobligatorii gol cu alt stil, fără să blochezi:
+  if (isEmpty && !field.hasAttribute('required')) {
+    field.classList.add('border-warning', 'bg-light');
+  } else {
+    field.classList.remove('border-warning', 'bg-light');
+  }
+});
+
+if (!allFilled) {
+  showToast("Atentie! Nu au fost completate toate câmpurile obligatorii!", "warning");
+  return;  // oprește execuția
+}
+
+    const previewContent = document.getElementById('previewContent');
+
+    const BR = document.getElementById('BR').value;
+const File_Ref = document.getElementById('File_Ref').value;
+const Statutory_GL_D = document.getElementById('Statutory_GL_D').value;
+const Statutory_GL_C = document.getElementById('Statutory_GL_C').value;
+const Journal = document.getElementById('Journal').value;
+const Open_Item = document.getElementById('Open_Item').value;
+const DateDoc = document.getElementById('Date').value;
+const Post_Date = document.getElementById('Post_Date').value;
+const Month = document.getElementById('Month').value;
+const Year = document.getElementById('Year').value;
+const Amount = document.getElementById('Amount').value;
+const Foreign_Amount = document.getElementById('Foreign_Amount').value;
+const Credit_Amount = document.getElementById('Credit_Amount').value;
+const Credit_Foreign_Amount = document.getElementById('Credit_Foreign_Amount').value;
+const Currency = document.getElementById('Currency').value;
+const data_Description = document.getElementById('data_Description').value;
+const TC = document.getElementById('TC').value;
+const Customer_GCI = document.getElementById('Customer_GCI').value;
+const Customer_Name = document.getElementById('Customer_Name').value;
+
+const previewHtml = `
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-6">
+        <h5 style="color:red;" class="mb-3">Identificare Document</h5>
+        <p><strong>BR:</strong> ${BR}</p>
+        <p><strong>File Ref:</strong> ${File_Ref}</p>
+
+        <h5 style="color:red;" class="mt-4 mb-3">Conturi</h5>
+        <p><strong>Statutory GL Debit:</strong> ${Statutory_GL_D}</p>
+        <p><strong>Statutory GL Credit:</strong> ${Statutory_GL_C}</p>
+        <p><strong>Journal:</strong> ${Journal}</p>
+        <p><strong>Open Item:</strong> ${Open_Item}</p>
+
+        <h5 style="color:red;" class="mt-4 mb-3">Date Calendaristice</h5>
+        <p><strong>Data Document:</strong> ${DateDoc}</p>
+        <p><strong>Data Postare:</strong> ${Post_Date}</p>
+      </div>
+
+      <div class="col-md-6">
+        <h5 style="color:red;" class="mb-3 mt-md-0">Date Calendaristice (continuare)</h5>
+        <p><strong>Lună:</strong> ${Month}</p>
+        <p><strong>An:</strong> ${Year}</p>
+
+        <h5 style="color:red;" class="mt-4 mb-3">Valori & Devize</h5>
+        <p><strong>Suma Debit (lei):</strong> ${Amount}</p>
+        <p><strong>Suma Debit (valută):</strong> ${Foreign_Amount}</p>
+        <p><strong>Suma Credit (lei):</strong> ${Credit_Amount}</p>
+        <p><strong>Suma Credit (valută):</strong> ${Credit_Foreign_Amount}</p>
+        <p><strong>Deviză:</strong> ${Currency}</p>
+
+        <h5 style="color:red;" class="mt-4 mb-3">Descriere și Coduri</h5>
+        <p><strong>Descriere:</strong> ${data_Description}</p>
+        <p><strong>TC:</strong> ${TC}</p>
+
+        <h5 style="color:red;" class="mt-4 mb-3">Date Client</h5>
+        <p><strong>GCI:</strong> ${Customer_GCI}</p>
+        <p><strong>Nume Client:</strong> ${Customer_Name}</p>
+      </div>
+    </div>
+  </div>
+`;
+
+
     previewContent.innerHTML = previewHtml;
-
-    // Afișăm modalul
     previewModal.show();
+  });
 });
-
-// Adăugăm funcționalitate pentru a salva documentul (poți personaliza această acțiune)
-const saveButton = document.querySelector('.modal-footer .btn-primary');
-saveButton.addEventListener('click', function() {
-    alert("Documentul a fost salvat!");
-    // Poți adăuga aici cod pentru a salva datele pe server sau într-o bază de date
-    // De exemplu: trimite formularul prin AJAX sau o funcție de API
-});
-
-
   function toggleSection(sectionId) {
     // Obține toate secțiunile
     var sections = document.querySelectorAll('.card.mb-4');
+    
     
     // Ascunde toate secțiunile
     sections.forEach(function(section) {
@@ -1392,59 +2102,316 @@ saveButton.addEventListener('click', function() {
         section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
-  function extractNotes() {
-    var startDate = document.getElementById('startDate').value;
-    var endDate = document.getElementById('endDate').value;
+function extractNotes() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
 
-    if (!startDate || !endDate) {
-      alert("Vă rugăm să selectați ambele perioade!");
-      return;
+  if (!startDate || !endDate) {
+    showToast('Introduceți perioada completă!', 'danger');
+    return;
+  }
+
+  fetch('/get-notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ start_date: startDate, end_date: endDate })
+  })
+  .then(response => response.json())
+  .then(result => {
+    if (result.status === 'ok') {
+      populateTable(result.data);
+      showToast('Notele au fost extrase cu succes!', 'success');
+    } else {
+      showToast(result.message || 'Eroare necunoscută', 'danger');
+    }
+  })
+  .catch(error => {
+    console.error('Eroare la fetch:', error);
+    showToast('A apărut o eroare la comunicarea cu serverul.', 'danger');
+  });
+}
+function populateTable(data) {
+  const table = document.getElementById('historical-table');
+  const thead = table.querySelector('thead');
+  const tbody = table.querySelector('tbody');
+  const pastelColors = [
+    '#f8f9fa', '#f0f4ff', '#fef6f0', '#f2fff0', '#f9f0ff', 
+    '#fffbe6', '#e6f7ff', '#f6ffed', '#fff0f6', '#f0f5ff'
+  ];
+
+  // Mapare: Acct_Tran_Id -> culoare
+  const colorMap = new Map();
+  let colorIndex = 0;
+
+  // Golim thead și tbody
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="100%" class="text-center">Nicio notă găsită în perioada selectată.</td></tr>';
+    return;
+  }
+
+  // Obținem toate coloanele din primul obiect (folosind for...in ca să păstrăm ordinea)
+  const columns = [];
+  for (const key in data[0]) {
+    if (data[0].hasOwnProperty(key)) {
+      columns.push(key);
+    }
+  }
+
+  // Construim head-ul tabelului
+  const trHead = document.createElement('tr');
+  trHead.innerHTML = `<th>#</th>` + columns.map(col => `<th>${col}</th>`).join('') + `<th>Acțiuni</th>`;
+  thead.appendChild(trHead);
+
+  // Construim body-ul
+  
+  data.forEach((row, index) => {
+    const tr = document.createElement('tr');
+    const acctId = row['Acct_Tran_Id'];
+    if (!colorMap.has(acctId)) {
+      colorMap.set(acctId, pastelColors[colorIndex % pastelColors.length]);
+      colorIndex++;
     }
 
-    // Simulăm extragerea datelor dintr-o bază de date
-    var notes = [
-      { date: '2025-01-01', description: 'Notă 1', amount: '1000 RON' },
-      { date: '2025-01-15', description: 'Notă 2', amount: '2000 RON' },
-      { date: '2025-02-01', description: 'Notă 3', amount: '1500 RON' }
-    ];
+    const bgColor = colorMap.get(acctId);
+    tr.style.backgroundColor = bgColor;
 
-    // Filtrăm notele contabile în funcție de perioada aleasă
-    var filteredNotes = notes.filter(function(note) {
-      return note.date >= startDate && note.date <= endDate;
+    // Index
+    let rowHtml = `<td>${index + 1}</td>`;
+
+    // Coloane dinamice
+    rowHtml += columns.map(col => {
+      let val = row[col];
+      if (val === null || val === undefined) val = '-';
+      return `<td>${val}</td>`;
+    }).join('');
+
+    // Acțiuni (buton Detalii, Edit, Ștergere)
+    rowHtml += `
+      <td>
+   <button 
+  class="btn btn-sm me-1 btn-details" 
+  style="
+    color: #0d6efd;
+    border: 1.5px solid #0d6efd;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 6px 14px;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(13,110,253,0.1);
+    transition: all 0.25s ease;
+    cursor: pointer;
+  "
+  onmouseover="this.style.backgroundColor='#0d6efd'; this.style.color='white'; this.style.transform='translateY(-1px)';"
+  onmouseout="this.style.backgroundColor='white'; this.style.color='#0d6efd'; this.style.transform='translateY(0)';"
+>
+  Detalii
+</button>
+
+<button 
+  class="btn btn-sm me-1 btn-edit" 
+  style="
+    color: #198754;
+    border: 1.5px solid #198754;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 6px 14px;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(25,135,84,0.1);
+    transition: all 0.25s ease;
+    cursor: pointer;
+  "
+  onmouseover="this.style.backgroundColor='#198754'; this.style.color='white'; this.style.transform='translateY(-1px)';"
+  onmouseout="this.style.backgroundColor='white'; this.style.color='#198754'; this.style.transform='translateY(0)';"
+>
+  Edit
+</button>
+
+<button 
+  class="btn btn-sm btn-delete" 
+  style="
+    color: #dc3545;
+    border: 1.5px solid #dc3545;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 6px 14px;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(220,53,69,0.1);
+    transition: all 0.25s ease;
+    cursor: pointer;
+  "
+  onmouseover="this.style.backgroundColor='#dc3545'; this.style.color='white'; this.style.transform='translateY(-1px)';"
+  onmouseout="this.style.backgroundColor='white'; this.style.color='#dc3545'; this.style.transform='translateY(0)';"
+>
+  Șterge
+</button>
+
+
+      </td>`;
+
+    tr.innerHTML = rowHtml;
+    tbody.appendChild(tr);
+
+    // Event listener buton Detalii
+    tr.querySelector('.btn-details').addEventListener('click', () => {
+      showDetailsModal(row);
     });
 
-    // Umplem tabelul cu notele extrase
-    var tableBody = document.querySelector('#show-all tbody');
-    tableBody.innerHTML = ''; // Resetează tabelul înainte de a adăuga noi date
-    filteredNotes.forEach(function(note, index) {
-      var row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${note.date}</td>
-        <td>${note.description}</td>
-        <td>${note.amount}</td>
-        <td><button class="btn btn-warning" onclick="editNote(${index})">Edit</button></td>
-      `;
-      tableBody.appendChild(row);
+    // Event listener buton Edit (aici poți pune ce funcționalitate vrei)
+    tr.querySelector('.btn-edit').addEventListener('click', () => {
+      // De exemplu, deschizi un modal de editare sau redirecționezi
+      openEditModal(row);
     });
-  }
- $(document).ready(function () {
-    $('#map-table').DataTable({
-      dom: 'Bfrtip',
-      buttons: [ 'csv', 'excel'],
-      pageLength: 10,
-      lengthMenu: [5, 10, 25, 50, 100],
-      language: {
-        search: "Căutare:",
-        lengthMenu: "Afișează _MENU_ înregistrări",
-        info: "Afișează _START_ - _END_ din _TOTAL_",
-        paginate: {
-          next: "Următorul",
-          previous: "Înapoi"
-        },
-        zeroRecords: "Nicio înregistrare găsită",
+
+    // Event listener buton Ștergere (confirmare și acțiune)
+    tr.querySelector('.btn-delete').addEventListener('click', () => {
+      if (confirm('Ești sigur că vrei să ștergi această înregistrare?')) {
+        deleteRecord(row);
       }
     });
+  });
+}
+
+// Exemplu funcții pentru edit și delete (trebuie să le implementezi tu după nevoi)
+function openEditModal(row) {
+  console.log('Edit:', row);
+  // deschide modal, populare câmpuri etc.
+}
+
+function showToast(message, type = 'success') {
+  const toastContainer = document.getElementById('toastContainer');
+  if (!toastContainer) return;
+
+  const toastEl = document.createElement('div');
+  toastEl.className = `toast align-items-center text-bg-${type} border-0`;
+  toastEl.role = 'alert';
+  toastEl.ariaLive = 'assertive';
+  toastEl.ariaAtomic = 'true';
+  toastEl.style.minWidth = '200px';
+
+  toastEl.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${message}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Închide"></button>
+    </div>
+  `;
+
+  toastContainer.appendChild(toastEl);
+  const bsToast = new bootstrap.Toast(toastEl);
+  bsToast.show();
+
+  toastEl.addEventListener('hidden.bs.toast', () => {
+    toastEl.remove();
+  });
+}
+
+function deleteRecord(row) {
+  if (!row.id) {
+    showToast('ID-ul înregistrării este invalid!', 'danger');
+    return;
+  }
+
+  fetch('/delete-note', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: row.id })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'ok') {
+      showToast('Înregistrarea a fost ștearsă cu succes!');
+      extractNotes(); // funcția ta de refresh tabel
+    } else {
+      showToast('Eroare la ștergere: ' + data.message, 'danger');
+    }
+  })
+  .catch(err => {
+    console.error('Eroare la fetch:', err);
+    showToast('A apărut o eroare la ștergere.', 'danger');
+  });
+}
+
+// Funcția care afișează modalul cu detalii frumos formatate
+function showDetailsModal(rowData) {
+  const modalBody = document.getElementById('detailsModalBody');
+  modalBody.innerHTML = ''; // reset
+
+  // Construim un tabel cu datele
+  const table = document.createElement('table');
+  table.className = 'table table-bordered';
+
+  for (const key in rowData) {
+    if (rowData.hasOwnProperty(key)) {
+      const tr = document.createElement('tr');
+
+      const th = document.createElement('th');
+      th.style.width = '30%';
+      th.textContent = key;
+
+      const td = document.createElement('td');
+      td.textContent = rowData[key] === null ? '-' : rowData[key];
+
+      tr.appendChild(th);
+      tr.appendChild(td);
+      table.appendChild(tr);
+    }
+  }
+
+  modalBody.appendChild(table);
+
+  // Deschidem modalul (folosind Bootstrap 5)
+  const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+  detailsModal.show();
+}
+
+ $(document).ready(function () {
+  $('#map-table').DataTable({
+  dom: 'Bfrtip',
+  buttons: [
+    {
+      extend: 'csv',
+      text: '📄 CSV',
+      className: 'btn btn-outline-primary me-2',
+      messageTop: 'Export generat automat pe baza maparii curente.',
+messageBottom: 'Generat de aplicația GT',
+title: 'Mapare conturi GL',
+sheetName: 'Export_GL',
+      filename: 'Mapare_GL_' + new Date().toISOString().slice(0, 10),
+      exportOptions: {
+        columns: ':not(:last-child)' // Exclude last column (Actions)
+      }
+    },
+    {
+      extend: 'excel',
+      text: '📊 Excel',
+      className: 'btn btn-success',
+      sheetName: 'Export_GL',
+      title: 'Mapare conturi GL',
+      messageTop: 'Export generat automat pe baza maparii curente.',
+messageBottom: 'Generat de aplicația GT',
+
+      filename: 'Mapare_GL_' + new Date().toISOString().slice(0, 10),
+      exportOptions: {
+        columns: ':not(:last-child)' // Exclude last column (Actions)
+      }
+    }
+  ],
+  pageLength: 10,
+  lengthMenu: [5, 10, 25, 50, 100],
+  language: {
+    search: "Căutare:",
+    lengthMenu: "Afișează _MENU_ înregistrări",
+    info: "Afișează _START_ - _END_ din _TOTAL_",
+    paginate: {
+      next: "Următorul",
+      previous: "Înapoi"
+    },
+    zeroRecords: "Nicio înregistrare găsită",
+  }
+});
+
   });
   // Funcția pentru editarea unei note contabile
   function editNote(index) {
@@ -1551,10 +2518,15 @@ window.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('historySidebar');
 
     // Deschidere automată cu întârziere de 600ms
-    setTimeout(() => {
-      sidebar.classList.add('expanded');
-    }, 600);
+   setTimeout(() => {
+    sidebar.classList.add('expanded');
 
+    // Strângere automată după 5 secunde de la deschidere
+    setTimeout(() => {
+      sidebar.classList.remove('expanded');
+    }, 1500);
+
+  }, 400);
     // Închidere la clic pe „×”
     document.getElementById('closeHistoryBtn').addEventListener('click', () => {
       sidebar.classList.remove('expanded');
@@ -1641,24 +2613,7 @@ window.addEventListener('DOMContentLoaded', () => {
   </script>
   <script>
   $(document).ready(function () {
-    // const table = $('#map-table').DataTable({
-    //   dom: '<"d-flex justify-content-between align-items-center mb-3"Bf>rt<"d-flex justify-content-between align-items-center mt-3"lip>',
-    //   buttons: [
-    //     { extend: 'copy', text: 'Copiere' },
-    //     { extend: 'csv', text: 'CSV' },
-    //     { extend: 'excel', text: 'Excel' },
-    //     { extend: 'pdf', text: 'PDF' },
-    //     { extend: 'print', text: 'Printare' }
-    //   ],
-    //   pageLength: 10,
-    //   language: {
-    //     search: "🔍 Căutare:",
-    //     paginate: {
-    //       next: "Următorul",
-    //       previous: "Înapoi"
-    //     }
-    //   }
-    // });
+    
 
     $('#addRowBtn').click(function () {
       const headers = {{ map_df[0].keys()|list|tojson }};
@@ -1709,6 +2664,358 @@ window.addEventListener('DOMContentLoaded', () => {
   //   const table = $('#map-table').DataTable();
   //   table.row(row).remove().draw();
   // }
+  document.getElementById("soldCLButton").addEventListener("click", function () {
+    const perioada = document.getElementById("periodeInputClienti").value;
+    const msgDiv = document.getElementById("soldClientiMsg");
+    const button = this;
+
+    if (!perioada) {
+        alert("Introduceți perioada!");
+        return;
+    }
+    
+
+    // Arătăm mesajul de încărcare cu spinner
+    msgDiv.style.display = 'block';
+    msgDiv.className = '';
+    msgDiv.innerHTML = '<span class="spinner"></span> Se procesează... Vă rugăm așteptați.';
+
+    // Dezactivăm butonul
+    button.disabled = true;
+
+    const [year, month] = perioada.split("-");
+    const formData = new FormData();
+    formData.append("start-dateCl", `${year}-${month}`);
+    formData.append("end-dateCl", `${year}-${month}`);
+
+    fetch("/genereaza_sold_clienti", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        msgDiv.classList.remove('text-danger', 'text-success');
+
+        if (data.status === "success") {
+            msgDiv.classList.add('text-success');
+            msgDiv.textContent = "Sold clienți generat cu succes!";
+        } else if (data.status === "already_exists") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Datele pentru această perioadă au fost deja importate și sunt identice.";
+        } else if (data.status === "no_data") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Nu s-au găsit date pentru perioada selectată. Vă rugăm să importați GL pentru această perioadă.";
+        } else {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "A apărut o eroare neașteptată.";
+        }
+    })
+    .catch(error => {
+        msgDiv.classList.remove('text-success');
+        msgDiv.classList.add('text-danger');
+        msgDiv.textContent = "Eroare la generare: " + error.message;
+    })
+    .finally(() => {
+        button.disabled = false;
+    });
+});
+ 
+document.getElementById("soldFzButton").addEventListener("click", function () {
+    const perioada = document.getElementById("periodeInputFurnizori").value;
+    const msgDiv = document.getElementById("soldFurnizoriMsg");
+    const button = this;
+
+    if (!perioada) {
+        alert("Introduceți perioada!");
+        return;
+    }
+
+    // Arătăm mesajul de încărcare cu spinner
+    msgDiv.style.display = 'block';
+    msgDiv.className = '';
+    msgDiv.innerHTML = '<span class="spinner"></span> Se procesează... Vă rugăm așteptați.';
+
+    // Dezactivăm butonul
+    button.disabled = true;
+
+    const [year, month] = perioada.split("-");
+    const formData = new FormData();
+    formData.append("start-dateFz", `${year}-${month}`);
+    formData.append("end-dateFz", `${year}-${month}`);
+
+    fetch("/genereaza_sold_furnizori", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        msgDiv.classList.remove('text-danger', 'text-success');
+
+        if (data.status === "success") {
+            msgDiv.classList.add('text-success');
+            msgDiv.textContent = "Sold furnizori generat cu succes!";
+        } else if (data.status === "already_exists") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Datele pentru această perioadă au fost deja importate și sunt identice.";
+        } else if (data.status === "no_data") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Nu s-au găsit date pentru perioada selectată. Vă rugăm să importați GL pentru această perioadă.";
+        } else {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "A apărut o eroare neașteptată.";
+        }
+    })
+    .catch(error => {
+        msgDiv.classList.remove('text-success');
+        msgDiv.classList.add('text-danger');
+        msgDiv.textContent = "Eroare la generare: " + error.message;
+    })
+    .finally(() => {
+        button.disabled = false;
+    });
+});
+ const fileInput = document.getElementById("nc-file-upload");
+  const uploadBtn = document.getElementById("nc-upload-button");
+  const importBtn = document.getElementById("nc-import-button");
+  const fileNameDisplay = document.getElementById("nc-file-name-display");
+  const progressBar = document.getElementById("nc-upload-progress-bar");
+
+  // Când se selectează fișierul
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length > 0) {
+      uploadBtn.disabled = false;
+      fileNameDisplay.style.display = "inline-block";
+    } else {
+      uploadBtn.disabled = true;
+      fileNameDisplay.style.display = "none";
+    }
+  });
+
+  // Upload fișier
+  uploadBtn.addEventListener("click", async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    progressBar.style.width = "0%";
+    progressBar.innerText = "0%";
+
+    try {
+      const response = await fetch("/upload-nc", {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.status === "ok") {
+        progressBar.style.width = "100%";
+        progressBar.innerText = "100%";
+        progressBar.classList.add("bg-success");
+        importBtn.disabled = false;
+          showToast("Fișierul a fost încărcat cu succes.", "success");
+      } else {
+        progressBar.classList.add("bg-danger");
+        showToast("Eroare la import: " + result.message, "danger");
+      }
+    } catch (err) {
+      showToast("Eroare la server: " + err.message, "danger");
+    }
+  });
+
+  // Import în baza de date
+  importBtn.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/import-nc-gl", {
+        method: "POST"
+      });
+
+      const result = await response.json();
+      if (result.status === "ok") {
+         showToast("Datele au fost importate cu succes în GL in baza de date.", "success");
+      } else {
+        showToast("Eroare la import: " + result.message, "danger");
+      }
+    } catch (err) {
+      showToast("Eroare la server: " + err.message, "danger");
+    }
+  });
+//   function showToast(message, type = 'success') {
+//   const toastEl = document.getElementById('liveToast');
+//   const toastMsg = document.getElementById('toastMessage');
+
+//   toastEl.className = `toast text-white bg-${type}`;
+//   toastMsg.textContent = message;
+
+//   const toast = new bootstrap.Toast(toastEl);
+//   toast.show();
+// }
+
+let currentEditRow = null;
+
+function openEditModal(row) {
+  currentEditRow = row; // ținem minte rândul care se editează
+  const form = document.getElementById('editForm');
+  form.innerHTML = '';
+
+  for (const key in row) {
+    let val = row[key] ?? '';
+    let inputType = 'text';  // tipul implicit de input
+    let readonlyAttr = '';
+
+    // Facem anumite câmpuri readonly
+    const readonlyFields = ['id', 'JT', 'user','rowNumber','User_id','User_name','User_email','Acct_Tran_Id'];
+    if (readonlyFields.includes(key)) {
+      readonlyAttr = 'readonly';
+    }
+
+    // Detectăm câmpurile de tip dată după nume (poți ajusta lista după cum ai nevoie)
+    const dateFieldsPatterns = ['date', 'Date', 'timestamp', 'Data'];
+    if (dateFieldsPatterns.some(pattern => key.includes(pattern))) {
+      inputType = 'date';
+
+      // Pentru a pune valoarea în format compatibil input date
+      // Dacă val nu e gol și e string, îl convertim în format YYYY-MM-DD
+      if (val) {
+        // Dacă val este deja în format 'YYYY-MM-DD', îl lăsăm așa, altfel încercăm să extragem partea relevantă
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+          val = val.slice(0, 10);  // primele 10 caractere ar trebui să fie YYYY-MM-DD
+        }
+      }
+    }
+
+    const field = document.createElement('div');
+    field.className = 'col-md-6';
+
+    field.innerHTML = `
+      <label class="form-label">${key}</label>
+      <input type="${inputType}" class="form-control" name="${key}" value="${val}" ${readonlyAttr}>
+    `;
+
+    form.appendChild(field);
+  }
+
+  // Deschide modalul
+  const modal = new bootstrap.Modal(document.getElementById('editModal'));
+  modal.show();
+}
+
+function submitEdit() {
+  const form = document.getElementById('editForm');
+  const formData = new FormData(form);
+  const data = {};
+
+  for (const [key, value] of formData.entries()) {
+    data[key] = value;
+  }
+
+  fetch('/update-note', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+    .then(res => res.json())
+    .then(response => {
+      if (response.status === 'ok') {
+        showToast('Modificările au fost salvate cu succes!', 'success');
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+        modal.hide();
+        extractNotes(); // sau loadDataAndPopulateTable() dacă folosești acea funcție
+      } else {
+        showToast('Eroare: ' + response.message, 'danger');
+      }
+    })
+    .catch(err => {
+      showToast('Eroare rețea: ' + err, 'danger');
+    });
+}
+
+document.getElementById('deleteGLButton').addEventListener('click', async function () {
+  const perioada = document.getElementById('deleteGLPerioadaInput').value;
+  const spinner = document.getElementById('deleteGLSpinner');
+  const feedback = document.getElementById('deleteGLFeedback');
+
+  if (!perioada) {
+    alert('Te rog să introduci o perioadă (YYYY-MM).');
+    return;
+  }
+
+  // Afișează spinner
+  spinner.classList.remove('d-none');
+  feedback.classList.add('d-none');
+
+  try {
+    const response = await fetch(`/delete-gl?perioada=${encodeURIComponent(perioada)}`, {
+      method: 'DELETE'
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      feedback.textContent = result.message || "GL șters cu succes.";
+      feedback.classList.remove('d-none', 'text-danger');
+      feedback.classList.add('text-success');
+    } else {
+      let errorMsg;
+      try {
+        const errJson = await response.json();
+        errorMsg = errJson.message || JSON.stringify(errJson);
+      } catch {
+        errorMsg = await response.text();
+      }
+      feedback.textContent = `Eroare: ${errorMsg}`;
+      feedback.classList.remove('d-none', 'text-success');
+      feedback.classList.add('text-danger');
+    }
+  } catch (err) {
+    feedback.textContent = `Eroare de rețea: ${err.message}`;
+    feedback.classList.remove('d-none', 'text-success');
+    feedback.classList.add('text-danger');
+  } finally {
+    spinner.classList.add('d-none');
+  }
+});
+function pad(num, size) {
+    let s = num + "";
+    while (s.length < size) s = "0" + s;
+    return s;
+}
+
+async function generateJournalCode() {
+    const journalInput = document.getElementById('Journal');
+    if (!journalInput) return;
+
+    // Folosește data curentă
+    const d = new Date();
+    const year = d.getFullYear();
+    const yy = String(year).slice(-2);
+    const mm = pad(d.getMonth() + 1, 2);
+    const dd = pad(d.getDate(), 2);
+    const dateStr = `${year}-${mm}-${dd}`;
+
+    // Ia numărul secvențial de la server
+    let seq = 1;
+    try {
+        const resp = await fetch(`/get-journal-seq?date=${dateStr}`);
+        if (resp.ok) {
+            const data = await resp.json();
+            seq = data.seq || 1;
+        }
+    } catch (e) {}
+
+    const nnn = pad(seq, 3);
+    journalInput.value = `EE${yy}${mm}${dd}${nnn}`;
+}
+document.addEventListener('DOMContentLoaded', generateJournalCode);
+document.querySelectorAll('#entryForm input, #entryForm select, #entryForm textarea').forEach(input => {
+  input.addEventListener('input', () => {
+    if (input.value && input.value.trim() !== '') {
+      input.classList.remove('is-invalid');
+    }
+  });
+});
+// Sau când deschizi secțiunea manual-NC, apelează generateJournalCode();
 </script>
 
 </body>

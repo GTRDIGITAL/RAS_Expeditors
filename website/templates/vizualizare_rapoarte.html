@@ -446,7 +446,156 @@ input[type="checkbox"]:checked::after {
 .clear-filter button:hover {
   background: #cc0000;
   color:white;
+
 }
+.msg-box {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+/* Spinner minimalist */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 3px solid rgba(0,0,0,0.2);
+  border-top-color: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Mesaje succes / eroare */
+.text-success {
+  color: green;
+}
+
+.text-danger {
+  color: red;
+}
+
+#importButton:disabled {
+    cursor: not-allowed;
+}
+/* Container pentru centru absolut */
+#container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #fafafa;
+  box-sizing: border-box;
+}
+
+/* Mesaj ca card elegant, centrat absolut */
+.msg-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 320px;
+  max-width: 420px;
+  padding: 18px 24px;
+  padding-top: 20px !important;
+  border-radius: 14px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-weight: 600;
+  font-size: 2rem!important;
+  background-color: rgba(255 255 255 / 0.95);
+  color: #333;
+  user-select: none;
+  opacity: 0;
+  animation: fadeInUp 0.4s forwards;
+  letter-spacing: 0.03em;
+}
+
+/* Culori mai soft și elegante */
+.text-success {
+  border-left: 6px solid #2a9d8f;
+  color: #264653;
+  background-color: #e0f2f1;
+  font-size: large;
+}
+
+.text-danger {
+  border-left: 6px solid #e76f51;
+  color: #7b2d26;
+  background-color: #fce8e6;
+  font-size: large;
+}
+
+.text-loading {
+  border-left: 6px solid #4a90e2;
+  color: #375a7f;
+  background-color: #e6f0fa;
+  font-size: large;
+}
+
+/* Animație fade in cu translateY pentru un efect modern */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Spinner minimalist cu linie subțire */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0,0,0,0.1);
+  border-top-color: #4a90e2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Emoji discrete */
+.msg-box .emoji {
+  font-size: 1.4rem;
+  line-height: 1;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+#message-container {
+  max-width: 600px;
+  margin: 1rem auto;
+}
+
+.message-box {
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  border: 1px solid #cfe2ff;
+  background-color: #76a1dd; /* albastru subtil */
+  color: #0d3b66;
+  transition: opacity 0.3s ease;
+}
+
+.message-box.info::before {
+  content: "ℹ️";
+  font-size: 1.2rem;
+}
+
   </style>
 </head>
 <body>
@@ -512,8 +661,12 @@ input[type="checkbox"]:checked::after {
 <div class="card border-0 shadow-lg p-4 mb-5 rounded-4">
   <div class="mb-4">
     <h4 class="text-black fw-bold mb-1">Generare Rapoarte Contabile</h4>
+    
     <p class="text-muted">Selectează perioada și generează raportul dorit</p>
   </div>
+  <div id="message-container" >
+  <div id="msg" class="mt-2 text-success" style="display:none;"></div>
+           <div id="msg" style="display:none;" class="msg-box"></div></div>
  <div id="dropdown-container" class="mt-4" style="display: none;">
   <!-- Checkbox + Select cont 6 -->
    <form method="POST" id="fisaForm">
@@ -573,9 +726,16 @@ input[type="checkbox"]:checked::after {
     {% endfor %}
     </select>
   </div>
+<div class="text-center mt-4" id="fisaStatusWrapper" style="display: none;">
+  <div id="fisaSpinner" class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+    <span class="visually-hidden">Se generează...</span>
+  </div>
+  <div id="fisaStatusMsg" class="mt-3 fw-semibold fs-5"></div>
+</div>
 
   <!-- Butoane acțiune -->
   <div class="d-flex gap-3 mt-4">
+    
     <button id="genereazaFisa" type="submit" class="btn btn-primary">
       <i class="bi bi-play-circle"></i> Generează Fișa de Cont
     </button>
@@ -713,7 +873,7 @@ input[type="checkbox"]:checked::after {
   <!-- Butoane acțiune -->
   <div class="d-flex gap-3 mt-4">
     <button id="genereazaFisaFz" type="submit" class="btn btn-primary">
-      <i class="bi bi-play-circle"></i> Generează Sold de Clienți
+      <i class="bi bi-play-circle"></i> Generează Sold de Furnizori
     </button>
     <button id="cancelFisaFz" type="button" class="btn btn-outline-danger">
       <i class="bi bi-x-circle"></i> Anulează
@@ -772,7 +932,7 @@ input[type="checkbox"]:checked::after {
 </button>
 
 <!-- Furnizori - Outline roșu -->
-<button class="btn btn-outline-danger px-4 py-2 shadow-sm d-flex align-items-center gap-2 text-dark" name="action" value="fr3">
+<button id="btn-fisa-fz" class="btn btn-outline-danger px-4 py-2 shadow-sm d-flex align-items-center gap-2 text-dark" name="action" value="fr3">
   <i class="bi bi-truck fs-5"></i> Furnizori
 </button>
    
@@ -846,7 +1006,28 @@ input[type="checkbox"]:checked::after {
 
   <!-- Custom JavaScript -->
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const buttons = document.querySelectorAll(
+    "button[name='action'][value='tb'], " + // Balanța
+    "button[name='action'][value='gl'], " + // GL Mapat
+    "#genereazaFisa, #genereazaFisaCl, #genereazaFisaFz" // butoanele Generează
+  );
+  const msgDiv = document.getElementById("msg");
 
+  buttons.forEach(button => {
+    button.addEventListener("click", function () {
+      msgDiv.style.display = "block";
+      msgDiv.className = "";
+      msgDiv.innerHTML = '<span class="spinner"></span> Se procesează... Vă rugăm așteptați.';
+
+      // Ascunde mesajul automat după 8 secunde
+      setTimeout(() => {
+        msgDiv.style.display = "none";
+        msgDiv.innerHTML = "";
+      }, 8000);
+    });
+  });
+});
   //  document.getElementById("showFormBtn").addEventListener("click", function() {
   //   const form = document.getElementById("clientForm");
   //   form.style.display = form.style.display === "none" ? "block" : "none";
@@ -891,10 +1072,26 @@ endInput.addEventListener('input', updateDateFields);
     initSelectWithSelectAll('#conturi6');
     initSelectWithSelectAll('#conturi7');
 
-    $('#btn-fisa').on('click', function (e) {
+   $('#btn-fisa').on('click', function (e) {
       e.preventDefault();
-      $('#dropdown-container').slideDown();
-    });
+  const startInput = document.getElementById('start-date');
+  const endInput = document.getElementById('end-date');
+
+  // Dacă unul din câmpuri este invalid, afișăm mesajul nativ și oprim execuția
+  if (!startInput.checkValidity()) {
+    startInput.reportValidity();
+    return;
+  }
+
+  if (!endInput.checkValidity()) {
+    endInput.reportValidity();
+    return;
+  }
+
+  // Dacă ambele sunt valide, continuăm
+  $('#dropdown-container').slideDown();
+});
+
 
     $('#checkCont6').on('change', function () {
       $('#selectCont6').toggle(this.checked);
@@ -963,6 +1160,20 @@ endInputCl.addEventListener('input', updateDateFieldsCl);
 
     $('#btn-fisa-cl').on('click', function (e) {
       e.preventDefault();
+      const startInput = document.getElementById('start-date');
+  const endInput = document.getElementById('end-date');
+
+  // Dacă unul din câmpuri este invalid, afișăm mesajul nativ și oprim execuția
+  if (!startInput.checkValidity()) {
+    startInput.reportValidity();
+    return;
+  }
+
+  if (!endInput.checkValidity()) {
+    endInput.reportValidity();
+    return;
+  }
+
       $('#dropdown-container-cl').slideDown();
     });
 
@@ -1005,7 +1216,7 @@ endInputCl.addEventListener('input', updateDateFieldsCl);
     // });
 
 //------------------------------------------------------------------------------------------------------------
-/*
+
 const startInputFz = document.getElementById('start-date');        // input luna inițială (selector original)
 const endInputFz = document.getElementById('end-date');            // input luna finală (selector original)
 
@@ -1049,7 +1260,21 @@ endInputFz.addEventListener('input', updateDateFieldsFz);
 
     $('#btn-fisa-fz').on('click', function (e) {
       e.preventDefault();
-      $('#dropdown-container-cl').slideDown();
+      const startInput = document.getElementById('start-date');
+  const endInput = document.getElementById('end-date');
+
+  // Dacă unul din câmpuri este invalid, afișăm mesajul nativ și oprim execuția
+  if (!startInput.checkValidity()) {
+    startInput.reportValidity();
+    return;
+  }
+
+  if (!endInput.checkValidity()) {
+    endInput.reportValidity();
+    return;
+  }
+
+      $('#dropdown-container-fz').slideDown();
     });
 
     $('#checkContFz').on('change', function () {
@@ -1090,7 +1315,7 @@ endInputFz.addEventListener('input', updateDateFieldsFz);
     //   }
     // });
 
-*/
+
 
 
 
@@ -1098,6 +1323,10 @@ endInputFz.addEventListener('input', updateDateFieldsFz);
 
 
 document.getElementById('fisaForm').addEventListener('submit', function(e) {
+  const msgDiv = document.getElementById("msg");
+  msgDiv.style.display = 'block';
+  msgDiv.className = '';
+  msgDiv.innerHTML = '<span class="spinner"></span> Se procesează... Vă rugăm așteptați.';
     e.preventDefault(); // oprește submitul clasic
 
     const formData = new FormData(this);
@@ -1109,82 +1338,170 @@ document.getElementById('fisaForm').addEventListener('submit', function(e) {
     .then(response => response.json()) // sau .text() dacă serverul returnează altceva
     .then(data => {
         console.log('Răspuns de la server:', data);
+        msgDiv.classList.remove('text-danger', 'text-success');
+
+        if (data.status === "success") {
+            msgDiv.classList.add('text-success');
+            msgDiv.textContent = "Fisa cont generata cu succes!";
+        } else if (data.status === "already_exists") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Datele pentru această perioadă au fost deja importate și sunt identice.";
+        } else if (data.status === "no_data") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Nu s-au găsit date pentru perioada selectată. Vă rugăm să importați GL pentru această perioadă.";
+        } else {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "A apărut o eroare neașteptată.";
+        }
         // Redirect la pagina dorită (poți schimba URL-ul cu ce vrei)
         window.location.href = "{{ url_for('views.generate_reports_processing') }}";
     })
     .catch(error => {
+       msgDiv.classList.remove('text-success');
+        msgDiv.classList.add('text-danger');
+        msgDiv.textContent = "Eroare la generare: " + error.message;
         console.error('Eroare:', error);
     });
 });
 document.getElementById('fisaFormCl').addEventListener('submit', function(e) {
     e.preventDefault(); // oprește submitul clasic
-
+const msgDiv = document.getElementById("msg");
+  msgDiv.style.display = 'block';
+  msgDiv.className = '';
+  msgDiv.innerHTML = '<span class="spinner"></span> Se procesează... Vă rugăm așteptați.';
     const formData = new FormData(this);
 
-    fetch("{{ url_for('views.genereaza_sold_clienti') }}", {
+    fetch("{{ url_for('views.genereaza_raport_sold_clienti') }}", {
         method: 'POST',
         body: formData,
     })
     .then(response => response.json()) // sau .text() dacă serverul returnează altceva
     .then(data => {
         console.log('Răspuns de la server:', data);
+         msgDiv.classList.remove('text-danger', 'text-success');
+
+        if (data.status === "success") {
+            msgDiv.classList.add('text-success');
+            msgDiv.textContent = "Solduri clienti generate cu succes!";
+        } else if (data.status === "already_exists") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Datele pentru această perioadă au fost deja importate și sunt identice.";
+        } else if (data.status === "no_data") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Nu s-au găsit date pentru perioada selectată. Vă rugăm să importați GL pentru această perioadă.";
+        } else {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "A apărut o eroare neașteptată.";
+        }
         // Redirect la pagina dorită (poți schimba URL-ul cu ce vrei)
         window.location.href = "{{ url_for('views.generate_reports_processing') }}";
     })
     .catch(error => {
+       msgDiv.classList.remove('text-success');
+        msgDiv.classList.add('text-danger');
+        msgDiv.textContent = "Eroare la generare: " + error.message;
+        console.error('Eroare:', error);
+    });
+});
+
+document.getElementById('fisaFormFz').addEventListener('submit', function(e) {
+    e.preventDefault(); // oprește submitul clasic
+ const msgDiv = document.getElementById("msg");
+  msgDiv.style.display = 'block';
+  msgDiv.className = '';
+  msgDiv.innerHTML = '<span class="spinner"></span> Se procesează... Vă rugăm așteptați.';
+    const formData = new FormData(this);
+
+    fetch("{{ url_for('views.genereaza_raport_sold_furnizori') }}", {
+        method: 'POST',
+        body: formData,
+    })
+    .then(response => response.json()) // sau .text() dacă serverul returnează altceva
+    .then(data => {
+       if (data.status === "success") {
+            msgDiv.classList.add('text-success');
+            msgDiv.textContent = "Solduri furnizori generate cu succes!";
+        } else if (data.status === "already_exists") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Datele pentru această perioadă au fost deja importate și sunt identice.";
+        } else if (data.status === "no_data") {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "Nu s-au găsit date pentru perioada selectată. Vă rugăm să importați GL pentru această perioadă.";
+        } else {
+            msgDiv.classList.add('text-danger');
+            msgDiv.textContent = "A apărut o eroare neașteptată.";
+        }
+        console.log('Răspuns de la server:', data);
+        // Redirect la pagina dorită (poți schimba URL-ul cu ce vrei)
+        window.location.href = "{{ url_for('views.generate_reports_processing') }}";
+    })
+    .catch(error => {
+       msgDiv.classList.remove('text-success');
+        msgDiv.classList.add('text-danger');
+        msgDiv.textContent = "Eroare la generare: " + error.message;
         console.error('Eroare:', error);
     });
 });
 
 
-
-
 function exportTableToExcel(tableID, filename = 'export') {
-    const table = document.getElementById(tableID);
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const table = document.getElementById(tableID);
+  const msgDiv = document.getElementById("msg"); // div pentru mesaje
 
-    const blob = new Blob([wbout], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
+  const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
 
-    // Salvare locală DOAR dacă filename NU începe cu 'GL' (case insensitive)
-    if (!filename.toLowerCase().startsWith('gl')) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename + '.xlsx';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
+  const blob = new Blob([wbout], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
 
-    // Trimite la Flask
-    const file = new File([blob], filename + '.xlsx', {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    fetch('/trimite-mail-export', {
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'success') {
-        alert('Email trimis cu succes!');
-      } else {
-        alert('Eroare: ' + data.message);
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      alert('A apărut o eroare.');
-    });
+  // Salvare locală DOAR dacă filename NU începe cu 'GL' (case insensitive)
+  if (!filename.toLowerCase().startsWith('gl')) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
+
+  // Trimite la Flask
+  const file = new File([blob], filename + '.xlsx', {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  // Mesaj: în curs de trimitere
+  msgDiv.style.display = 'block';
+  msgDiv.className = '';
+  msgDiv.innerHTML = '<span class="spinner"></span> Se trimite fișierul...';
+
+  fetch('/trimite-mail-export', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    msgDiv.classList.remove('text-danger');
+    if (data.status === 'success') {
+      msgDiv.classList.add('text-success');
+      msgDiv.textContent = 'Email trimis cu succes!';
+    } else {
+      msgDiv.classList.add('text-danger');
+      msgDiv.textContent = 'Eroare: ' + (data.message || 'Trimiterea a eșuat.');
+    }
+  })
+  .catch(err => {
+    msgDiv.classList.remove('text-success');
+    msgDiv.classList.add('text-danger');
+    msgDiv.textContent = 'Eroare la server: ' + err.message;
+  });
+}
+
 
 let activeFilters = {};  // Stocăm filtrele active pentru fiecare coloană
 
@@ -1459,6 +1776,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       }
     });
+    
   </script>
 </body>
 </html>
