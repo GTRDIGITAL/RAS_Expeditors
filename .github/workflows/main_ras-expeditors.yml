@@ -1,4 +1,4 @@
-name: Deploy Flask App to Azure App Service with ACR
+name: Deploy Flask Web + Celery Worker to Azure App Service with ACR
 
 on:
   push:
@@ -10,40 +10,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout codul sursă
+      # 1. Checkout cod
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Autentificare la Azure
+      # 2. Login Azure
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3. Autentificare la Azure Container Registry (ACR)
+      # 3. Login ACR
       - name: ACR Login
         run: az acr login --name rasregistryacr
 
-      # 4. Construiește imaginea Docker
-      - name: Build Docker image
-        run: docker build . -f Dockerfile.web -t rasregistryacr.azurecr.io/ras-expeditors:latest
+      # 4. Build și push Web image
+      - name: Build and push Web Docker image
+        run: |
+          WEB_IMAGE=rasregistryacr.azurecr.io/ras-expeditors-web:latest
+          docker build -f Dockerfile.web -t $WEB_IMAGE .
+          docker push $WEB_IMAGE
+          echo "WEB_IMAGE=$WEB_IMAGE" >> $GITHUB_ENV
 
-      # 5. Trimite imaginea în ACR
-      - name: Push Docker image to ACR
-        run: docker push rasregistryacr.azurecr.io/ras-expeditors:latest
+      # 5. Build și push Worker image
+      - name: Build and push Worker Docker image
+        run: |
+          WORKER_IMAGE=rasregistryacr.azurecr.io/ras-expeditors-worker:latest
+          docker build -f Dockerfile.worker -t $WORKER_IMAGE .
+          docker push $WORKER_IMAGE
+          echo "WORKER_IMAGE=$WORKER_IMAGE" >> $GITHUB_ENV
 
-      # 6. Publică în Azure App Service
-      - name: Deploy to Azure Web App
+      # 6. Deploy Web App
+      - name: Deploy Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ras-expeditors
-          images: rasregistryacr.azurecr.io/ras-expeditors:latest
+          app-name: ras-expeditors-web
+          images: ${{ env.WEB_IMAGE }}
 
-      # 7. Setează variabilele de mediu Flask/MySQL/Redis
-      - name: Set App Settings
+      # 7. Deploy Worker App
+      - name: Deploy Worker App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ras-expeditors-worker
+          images: ${{ env.WORKER_IMAGE }}
+
+      # 8. Set environment variables pentru Web
+      - name: Set App Settings Web
         run: |
           az webapp config appsettings set \
-            --name ras-expeditors \
+            --name ras-expeditors-web \
             --resource-group ras_expeditors \
             --settings \
               FLASK_APP=app.py \
@@ -55,3 +70,17 @@ jobs:
               MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
               CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
               CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
+
+      # 9. Set environment variables pentru Worker
+      - name: Set App Settings Worker
+        run: |
+          az webapp config appsettings set \
+            --name ras-expeditors-worker \
+            --resource-group ras_expeditors \
+            --settings \
+              CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
+              CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }} \
+              MYSQL_HOST=${{ secrets.MYSQL_HOST }} \
+              MYSQL_USER=${{ secrets.MYSQL_USER }} \
+              MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+              MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
