@@ -57,4 +57,6 @@ jobs:
           app-name: ras-expeditors
           slot-name: production
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_f194e555b5274efd8cb7aa0530b04d3e }}
-          images: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras_expeditors_web:${{ github.sha }}
+          images: |
+            rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-web:${{ github.sha }}
+            rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-worker:${{ github.sha }}
