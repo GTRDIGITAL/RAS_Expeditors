@@ -1,4 +1,4 @@
-name: Deploy Flask Web + Celery Worker to Azure App Service with ACR
+name: Deploy Flask Web + Celery Worker to Azure Container Apps
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout cod
+      # 1. Checkout codul sursă
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -20,7 +20,7 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 3. Login ACR
+      # 3. Login Azure Container Registry (ACR)
       - name: ACR Login
         run: az acr login --name rasregistryacr
 
@@ -40,47 +40,32 @@ jobs:
           docker push $WORKER_IMAGE
           echo "WORKER_IMAGE=$WORKER_IMAGE" >> $GITHUB_ENV
 
-      # 6. Deploy Web App
-      - name: Deploy Web App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ras-expeditors
-          images: ${{ env.WEB_IMAGE }}
-
-      # 7. Deploy Worker App
-      - name: Deploy Worker App
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ras-expeditors-worker
-          images: ${{ env.WORKER_IMAGE }}
-
-      # 8. Set environment variables pentru Web
-      - name: Set App Settings Web
+      # 6. Deploy Web Container App existent
+      - name: Deploy Web Container App
         run: |
-          az webapp config appsettings set \
+          az containerapp update \
             --name ras-expeditors \
             --resource-group ras_expeditors \
-            --settings \
-              FLASK_APP=app.py \
-              FLASK_ENV=production \
-              SECRET_KEY=${{ secrets.SECRET_KEY }} \
-              MYSQL_HOST=${{ secrets.MYSQL_HOST }} \
-              MYSQL_USER=${{ secrets.MYSQL_USER }} \
-              MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
-              MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
-              CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
-              CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
+            --image ${{ env.WEB_IMAGE }} \
+            --env-vars FLASK_APP=app.py FLASK_ENV=production \
+                       SECRET_KEY=${{ secrets.SECRET_KEY }} \
+                       MYSQL_HOST=${{ secrets.MYSQL_HOST }} \
+                       MYSQL_USER=${{ secrets.MYSQL_USER }} \
+                       MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+                       MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
+                       CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
+                       CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
 
-      # 9. Set environment variables pentru Worker
-      - name: Set App Settings Worker
+      # 7. Deploy Worker Container App nou
+      - name: Deploy Worker Container App
         run: |
-          az webapp config appsettings set \
+          az containerapp create \
             --name ras-expeditors-worker \
             --resource-group ras_expeditors \
-            --settings \
-              CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
-              CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }} \
-              MYSQL_HOST=${{ secrets.MYSQL_HOST }} \
-              MYSQL_USER=${{ secrets.MYSQL_USER }} \
-              MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
-              MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+            --environment managedEnvironment-rasexpeditors-9f94 \
+            --image ${{ env.WORKER_IMAGE }} \
+            --cpu 0.5 --memory 1Gi \
+            --env-vars CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
+                       CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }} \
+            --min-replicas 1 --max-replicas 1 \
+            --ingress 'external' false
