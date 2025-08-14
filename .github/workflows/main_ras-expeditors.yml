@@ -45,7 +45,7 @@ jobs:
         run: |
           export $(grep -v '^#' .env | xargs)
           az containerapp update \
-            --name ras-expeditors \
+            --name ras-expeditors-web \
             --resource-group ras_expeditors \
             --image $WEB_IMAGE \
             --set-env-vars $(grep -v '^#' .env | xargs)
