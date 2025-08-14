@@ -50,6 +50,22 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
+      - name: Generate Docker Compose Config
+        run: |
+          echo "version: '3.8'
+          services:
+            web:
+              image: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_web:${{ github.sha }}
+              ports:
+                - '80:5000'
+              environment:
+                - WEBSITES_PORT=80
+                - WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
+              restart: always
+            worker:
+              image: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_worker:${{ github.sha }}
+              restart: always" > docker-compose.yml
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
@@ -57,4 +73,4 @@ jobs:
           app-name: ras-expeditors
           slot-name: production
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_f194e555b5274efd8cb7aa0530b04d3e }}
-          images: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_web:${{ github.sha }}
+          configuration-file: docker-compose.yml

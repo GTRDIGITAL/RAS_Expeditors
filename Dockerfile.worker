@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app \
+    C_FORCE_ROOT=true
 
-CMD ["celery", "-A", "website.tasks.celery", "worker", "--loglevel=info"]
+CMD ["celery", "-A", "website.tasks.celery", "worker", "--loglevel=info", "--concurrency=2", "--max-tasks-per-child=100"]
