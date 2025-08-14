@@ -12,13 +12,13 @@ cursor = conn.cursor()
 conn.autocommit = False  # pentru performanță
 
 # Citește fișierul Excel
-df = pd.read_excel(r"C:\Dezvoltare\RAS\RAS Expeditors\Chart of accounts 1224 (003).xlsx.xlsm")
+df = pd.read_excel(r"C:\Dezvoltare\RAS\RAS Expeditors\mapare unica.xlsx")
 df.columns = df.columns.str.strip()  # elimină spațiile de la început/final
 
 # Query de inserare
 insert_mapping_query = """
-    INSERT INTO mapping (GL, Br, Statutory_GL, Statutory_Type, Transaction_Type, Headers)
-    VALUES (%s, %s, %s, %s, %s, %s)
+    INSERT INTO mapping (GL, Br, Statutory_GL, Statutory_Type, Transaction_Type, Headers, TC)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
 """
 
 mapping_batch = []
@@ -34,23 +34,26 @@ for idx, row in df.iterrows():
         Br_raw = row.get("Br")
         Br = int(Br_raw) if not pd.isnull(Br_raw) else None
 
-        Statutory_GL = row.get("Statutory GL")
+        Statutory_GL = row.get("Statutory_GL")
         Statutory_GL = None if pd.isnull(Statutory_GL) else str(Statutory_GL).strip()
 
-        Statutory_Type = row.get("Statutory Type")
+        Statutory_Type = row.get("Statutory_Type")
         Statutory_Type = None if pd.isnull(Statutory_Type) else str(Statutory_Type).strip()
 
-        Transaction_Type = row.get("Transaction Types")
+        Transaction_Type = row.get("Transaction_Type")
         Transaction_Type = None if pd.isnull(Transaction_Type) else str(Transaction_Type).strip()
 
         Headers = row.get("Headers")
         Headers = None if pd.isnull(Headers) else str(Headers).strip()
+        
+        TC = row.get("TC")
+        TC = None if pd.isnull(TC) else str(TC).strip()
 
         # Opțional: sari peste rândurile fără Transaction_Type dacă vrei
         # if not Transaction_Type:
         #     continue
 
-        mapping_batch.append((GL, Br, Statutory_GL, Statutory_Type, Transaction_Type, Headers))
+        mapping_batch.append((GL, Br, Statutory_GL, Statutory_Type, Transaction_Type, Headers, TC))
 
         if len(mapping_batch) >= batch_size:
             cursor.executemany(insert_mapping_query, mapping_batch)
