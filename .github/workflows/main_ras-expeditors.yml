@@ -10,25 +10,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. Checkout cod
     - name: Checkout code
       uses: actions/checkout@v3
 
+    # 2. Login in Azure
     - name: Login to Azure
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    # 3. Login in Azure Container Registry
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: rasregistryacr.azurecr.io
+        username: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}
+        password: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}
+
+    # 4. Build și push imagine Web
     - name: Build and push Web image
       run: |
         docker build -f Dockerfile.web -t rasregistryacr.azurecr.io/flask-web:latest .
-        echo ${{ secrets.AZURE_CREDENTIALS }} | docker login rasregistryacr.azurecr.io --username $(jq -r .clientId) --password-stdin
         docker push rasregistryacr.azurecr.io/flask-web:latest
 
+    # 5. Build și push imagine Worker
     - name: Build and push Worker image
       run: |
         docker build -f Dockerfile.worker -t rasregistryacr.azurecr.io/flask-worker:latest .
         docker push rasregistryacr.azurecr.io/flask-worker:latest
 
+    # 6. Deploy Web Container App
     - name: Deploy Web Container App
       run: |
         az containerapp update \
@@ -44,6 +56,7 @@ jobs:
                      CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
                      CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
 
+    # 7. Deploy Worker Container App
     - name: Deploy Worker Container App
       run: |
         az containerapp update \
