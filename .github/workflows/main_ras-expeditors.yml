@@ -27,7 +27,7 @@ jobs:
       # 4. Build și push Web image
       - name: Build and push Web Docker image
         run: |
-          WEB_IMAGE=rasregistryacr.azurecr.io/ras-expeditors-web:latest
+          WEB_IMAGE=rasregistryacr.azurecr.io/ras-container-app:latest
           docker build -f Dockerfile.web -t $WEB_IMAGE .
           docker push $WEB_IMAGE
           echo "WEB_IMAGE=$WEB_IMAGE" >> $GITHUB_ENV
@@ -44,28 +44,29 @@ jobs:
       - name: Deploy Web Container App
         run: |
           az containerapp update \
-            --name ras-expeditors \
+            --name ras-container-app \
             --resource-group ras_expeditors \
             --image ${{ env.WEB_IMAGE }} \
-            --set-env-vars $(grep -v '^#' .env | xargs)
+            --cpu 0.5 --memory 1Gi \
+            --set-env-vars FLASK_APP=app.py FLASK_ENV=production \
+                           SECRET_KEY=${{ secrets.SECRET_KEY }} \
+                           MYSQL_HOST=${{ secrets.MYSQL_HOST }} \
+                           MYSQL_USER=${{ secrets.MYSQL_USER }} \
+                           MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+                           MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
+                           CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
+                           CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
 
-      # 7. Create Worker Container App dacă nu există
-      - name: Ensure Worker Container App exists
+      # 7. Deploy Worker Container App nou
+      - name: Deploy Worker Container App
         run: |
-          if ! az containerapp show --name ras-expeditors-worker --resource-group ras_expeditors &> /dev/null; then
-            az containerapp create \
-              --name ras-expeditors-worker \
-              --resource-group ras_expeditors \
-              --environment managedEnvironment-rasexpeditors-9f94 \
-              --image ${{ env.WORKER_IMAGE }} \
-              --cpu 0.5 --memory 1Gi \
-              --env-vars $(grep -v '^#' .env | xargs) \
-              --min-replicas 1 --max-replicas 1 \
-              --ingress 'external' false
-          else
-            az containerapp update \
-              --name ras-expeditors-worker \
-              --resource-group ras_expeditors \
-              --image ${{ env.WORKER_IMAGE }} \
-              --set-env-vars $(grep -v '^#' .env | xargs)
-          fi
+          az containerapp create \
+            --name ras-expeditors-worker \
+            --resource-group ras_expeditors \
+            --environment managedEnvironment-rasexpeditors-9f94 \
+            --image ${{ env.WORKER_IMAGE }} \
+            --cpu 0.5 --memory 1Gi \
+            --env-vars CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
+                       CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }} \
+            --min-replicas 1 --max-replicas 1 \
+            --ingress 'external' false
