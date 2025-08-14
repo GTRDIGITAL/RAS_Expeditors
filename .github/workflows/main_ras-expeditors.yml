@@ -1,4 +1,4 @@
-name: Deploy to Azure Container Apps
+name: Deploy Flask App to Azure App Service with ACR
 
 on:
   push:
@@ -10,58 +10,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Checkout cod
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # 1. Checkout codul sursă
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # 2. Login in Azure
-    - name: Login to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # 2. Autentificare la Azure
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    # 3. Login in Azure Container Registry
-    - name: Login to Azure Container Registry
-      uses: azure/docker-login@v1
-      with:
-        login-server: rasregistryacr.azurecr.io
-        username: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}
-        password: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}
+      # 3. Autentificare la Azure Container Registry (ACR)
+      - name: ACR Login
+        run: az acr login --name rasregistryacr
 
-    # 4. Build și push imagine Web
-    - name: Build and push Web image
-      run: |
-        docker build -f Dockerfile.web -t rasregistryacr.azurecr.io/flask-web:latest .
-        docker push rasregistryacr.azurecr.io/flask-web:latest
+      # 4. Construiește imaginea Docker
+      - name: Build Docker image
+        run: docker build . -f Dockerfile.web -t rasregistryacr.azurecr.io/ras-expeditors:latest
 
-    # 5. Build și push imagine Worker
-    - name: Build and push Worker image
-      run: |
-        docker build -f Dockerfile.worker -t rasregistryacr.azurecr.io/flask-worker:latest .
-        docker push rasregistryacr.azurecr.io/flask-worker:latest
+      # 5. Trimite imaginea în ACR
+      - name: Push Docker image to ACR
+        run: docker push rasregistryacr.azurecr.io/ras-expeditors:latest
 
-    # 6. Deploy Web Container App
-    - name: Deploy Web Container App
-      run: |
-        az containerapp update \
-          --name ras-expeditors-web \
-          --resource-group ras_expeditors \
-          --image rasregistryacr.azurecr.io/flask-web:latest \
-          --env-vars FLASK_APP=app.py FLASK_ENV=production \
-                     SECRET_KEY=${{ secrets.SECRET_KEY }} \
-                     MYSQL_HOST=${{ secrets.MYSQL_HOST }} \
-                     MYSQL_USER=${{ secrets.MYSQL_USER }} \
-                     MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
-                     MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
-                     CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
-                     CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
+      # 6. Publică în Azure App Service
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ras-expeditors
+          images: rasregistryacr.azurecr.io/ras-expeditors:latest
 
-    # 7. Deploy Worker Container App
-    - name: Deploy Worker Container App
-      run: |
-        az containerapp update \
-          --name ras-expeditors-worker \
-          --resource-group ras_expeditors \
-          --image rasregistryacr.azurecr.io/flask-worker:latest \
-          --env-vars CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
-                     CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
+      # 7. Setează variabilele de mediu Flask/MySQL/Redis
+      - name: Set App Settings
+        run: |
+          az webapp config appsettings set \
+            --name ras-expeditors \
+            --resource-group ras_expeditors \
+            --settings \
+              FLASK_APP=app.py \
+              FLASK_ENV=production \
+              SECRET_KEY=${{ secrets.SECRET_KEY }} \
+              MYSQL_HOST=${{ secrets.MYSQL_HOST }} \
+              MYSQL_USER=${{ secrets.MYSQL_USER }} \
+              MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+              MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
+              CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
+              CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
