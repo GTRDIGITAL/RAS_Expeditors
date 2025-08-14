@@ -69,4 +69,4 @@ jobs:
             --env-vars CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
                        CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }} \
             --min-replicas 1 --max-replicas 1 \
-            --ingress 'external' false
+            --ingress disabled
