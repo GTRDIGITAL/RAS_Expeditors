@@ -1,4 +1,4 @@
-name: Build and deploy container app to Azure Web App - ras-expeditors
+name: Build and deploy RAS Expeditors to Azure Web App
 
 on:
   push:
@@ -23,13 +23,24 @@ jobs:
           username: ${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}
           password: ${{ secrets.AzureAppService_ContainerPassword_bb7fc7f5e45547a899f82524d4bc5b73 }}
 
-      - name: Build and push web container image
+      - name: Build and push web container
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: ./Dockerfile.web        # folosește fișierul web
+          file: ./Dockerfile.web
           push: true
-          tags: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras_expeditors_web:${{ github.sha }}
+          tags: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-web:${{ github.sha }}
+          build-args: |
+            FLASK_APP=app.py
+            FLASK_ENV=production
+
+      - name: Build and push worker container
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile.worker
+          push: true
+          tags: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-worker:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
