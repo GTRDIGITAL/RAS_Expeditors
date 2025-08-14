@@ -24,7 +24,7 @@ jobs:
       - name: ACR Login
         run: az acr login --name rasregistryacr
 
-      # 4. Build și push Web image
+      # 4. Build și push Web Docker image
       - name: Build and push Web Docker image
         run: |
           WEB_IMAGE=rasregistryacr.azurecr.io/ras-container-app:latest
@@ -32,7 +32,7 @@ jobs:
           docker push $WEB_IMAGE
           echo "WEB_IMAGE=$WEB_IMAGE" >> $GITHUB_ENV
 
-      # 5. Build și push Worker image
+      # 5. Build și push Worker Docker image
       - name: Build and push Worker Docker image
         run: |
           WORKER_IMAGE=rasregistryacr.azurecr.io/ras-expeditors-worker:latest
@@ -57,9 +57,10 @@ jobs:
                            CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
                            CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
 
-      # 7. Deploy Worker Container App nou
+      # 7. Deploy Worker Container App intern
       - name: Deploy Worker Container App
         run: |
+          az acr login --name rasregistryacr
           az containerapp create \
             --name ras-expeditors-worker \
             --resource-group ras_expeditors \
