@@ -52,6 +52,39 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_f194e555b5274efd8cb7aa0530b04d3e }}
+
+      - name: Set Web App as Container
+        shell: pwsh
+        run: |
+          $profile = [System.Convert]::FromBase64String("${{ secrets.AzureAppService_PublishProfile_f194e555b5274efd8cb7aa0530b04d3e }}")
+          $profileXml = [System.Text.Encoding]::UTF8.GetString($profile)
+          $xml = [xml]$profileXml
+          $creds = $xml.SelectSingleNode("//publishProfile[@publishMethod='MSDeploy']")
+          $username = $creds.userName
+          $password = $creds.userPWD
+          
+          $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $username, $password)))
+          $apiUrl = "https://ras-expeditors.scm.azurewebsites.net/api/settings"
+          
+          $headers = @{
+              Authorization = ("Basic {0}" -f $base64AuthInfo)
+              "Content-Type" = "application/json"
+          }
+          
+          $body = @{
+              DOCKER_ENABLE_CI = "true"
+              WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
+              DOCKER_REGISTRY_SERVER_URL = "https://rasregistryacr.azurecr.io"
+              DOCKER_REGISTRY_SERVER_USERNAME = "rasregistryacr"
+              WEBSITES_PORT = "80"
+          } | ConvertTo-Json
+          
+          Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method Post -Body $body -ContentType "application/json"
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
