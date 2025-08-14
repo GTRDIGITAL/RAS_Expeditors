@@ -52,8 +52,21 @@ jobs:
     steps:
       - name: Generate Docker Compose file
         run: |
-          sed -i "s/\${DOCKER_REGISTRY_SERVER_USERNAME}/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/g" docker-compose.azure.yml
-          sed -i "s/\${IMAGE_TAG}/${{ github.sha }}/g" docker-compose.azure.yml
+          echo "version: '3.8'
+          
+          services:
+            web:
+              image: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-web:${{ github.sha }}
+              ports:
+                - '80:5000'
+              environment:
+                - WEBSITES_PORT=80
+                - WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
+              restart: always
+          
+            worker:
+              image: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-worker:${{ github.sha }}
+              restart: always" > docker-compose.azure.yml
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
