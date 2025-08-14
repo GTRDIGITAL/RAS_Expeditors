@@ -44,7 +44,7 @@ jobs:
       - name: Deploy Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ras-expeditors-web
+          app-name: ras-expeditors
           images: ${{ env.WEB_IMAGE }}
 
       # 7. Deploy Worker App
@@ -58,7 +58,7 @@ jobs:
       - name: Set App Settings Web
         run: |
           az webapp config appsettings set \
-            --name ras-expeditors-web \
+            --name ras-expeditors \
             --resource-group ras_expeditors \
             --settings \
               FLASK_APP=app.py \
