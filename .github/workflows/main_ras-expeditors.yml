@@ -1,95 +1,54 @@
-name: Build and deploy RAS Expeditors to Azure Web App
+name: Deploy to Azure Container Apps
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Log in to Azure Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: rasregistryacr.azurecr.io
-          username: ${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}
-          password: ${{ secrets.AzureAppService_ContainerPassword_bb7fc7f5e45547a899f82524d4bc5b73 }}
+    - name: Build and push Web image
+      run: |
+        docker build -f Dockerfile.web -t rasregistryacr.azurecr.io/flask-web:latest .
+        echo ${{ secrets.AZURE_CREDENTIALS }} | docker login rasregistryacr.azurecr.io --username $(jq -r .clientId) --password-stdin
+        docker push rasregistryacr.azurecr.io/flask-web:latest
 
-      - name: Build and push web container
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: ./Dockerfile.web
-          push: true
-          tags: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_web:${{ github.sha }}
-          build-args: |
-            FLASK_APP=app.py
-            FLASK_ENV=production
+    - name: Build and push Worker image
+      run: |
+        docker build -f Dockerfile.worker -t rasregistryacr.azurecr.io/flask-worker:latest .
+        docker push rasregistryacr.azurecr.io/flask-worker:latest
 
-      - name: Build and push worker container
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: ./Dockerfile.worker
-          push: true
-          tags: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_worker:${{ github.sha }}
+    - name: Deploy Web Container App
+      run: |
+        az containerapp update \
+          --name ras-expeditors-web \
+          --resource-group ras_expeditors \
+          --image rasregistryacr.azurecr.io/flask-web:latest \
+          --env-vars FLASK_APP=app.py FLASK_ENV=production \
+                     SECRET_KEY=${{ secrets.SECRET_KEY }} \
+                     MYSQL_HOST=${{ secrets.MYSQL_HOST }} \
+                     MYSQL_USER=${{ secrets.MYSQL_USER }} \
+                     MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} \
+                     MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
+                     CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
+                     CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: production
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Log in to Azure
-        uses: azure/login@v1
-        with:
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_f194e555b5274efd8cb7aa0530b04d3e }}
-
-      - name: Set Web App as Container
-        shell: pwsh
-        run: |
-          $profile = [System.Convert]::FromBase64String("${{ secrets.AzureAppService_PublishProfile_f194e555b5274efd8cb7aa0530b04d3e }}")
-          $profileXml = [System.Text.Encoding]::UTF8.GetString($profile)
-          $xml = [xml]$profileXml
-          $creds = $xml.SelectSingleNode("//publishProfile[@publishMethod='MSDeploy']")
-          $username = $creds.userName
-          $password = $creds.userPWD
-          
-          $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $username, $password)))
-          $apiUrl = "https://ras-expeditors.scm.azurewebsites.net/api/settings"
-          
-          $headers = @{
-              Authorization = ("Basic {0}" -f $base64AuthInfo)
-              "Content-Type" = "application/json"
-          }
-          
-          $body = @{
-              DOCKER_ENABLE_CI = "true"
-              WEBSITES_ENABLE_APP_SERVICE_STORAGE = "true"
-              DOCKER_REGISTRY_SERVER_URL = "https://rasregistryacr.azurecr.io"
-              DOCKER_REGISTRY_SERVER_USERNAME = "rasregistryacr"
-              WEBSITES_PORT = "80"
-          } | ConvertTo-Json
-          
-          Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method Post -Body $body -ContentType "application/json"
-
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ras-expeditors
-          slot-name: production
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_f194e555b5274efd8cb7aa0530b04d3e }}
-          images: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_web:${{ github.sha }}
+    - name: Deploy Worker Container App
+      run: |
+        az containerapp update \
+          --name ras-expeditors-worker \
+          --resource-group ras_expeditors \
+          --image rasregistryacr.azurecr.io/flask-worker:latest \
+          --env-vars CELERY_BROKER_URL=${{ secrets.REDIS_URL }} \
+                     CELERY_RESULT_BACKEND=${{ secrets.REDIS_URL }}

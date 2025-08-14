@@ -5,15 +5,12 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential libmariadb-dev && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV PYTHONPATH=/app \
-    GUNICORN_TIMEOUT=120 \
-    GUNICORN_WORKERS=3 \
-    GUNICORN_THREADS=3
+ENV PYTHONPATH=/app
 
 RUN mkdir -p uploads
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "--workers", "3", "--threads", "3", "app:app"]
+CMD ["python", "app.py"]
