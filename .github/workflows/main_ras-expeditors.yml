@@ -29,7 +29,7 @@ jobs:
           context: .
           file: ./Dockerfile.web
           push: true
-          tags: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-web:${{ github.sha }}
+          tags: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_web:${{ github.sha }}
           build-args: |
             FLASK_APP=app.py
             FLASK_ENV=production
@@ -40,7 +40,7 @@ jobs:
           context: .
           file: ./Dockerfile.worker
           push: true
-          tags: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-worker:${{ github.sha }}
+          tags: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_worker:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,24 +50,6 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Generate Docker Compose file
-        run: |
-          echo "version: '3.8'
-          
-          services:
-            web:
-              image: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-web:${{ github.sha }}
-              ports:
-                - '80:5000'
-              environment:
-                - WEBSITES_PORT=80
-                - WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
-              restart: always
-          
-            worker:
-              image: rasregistryacr.azurecr.io/${{ secrets.AzureAppService_ContainerUsername_11120a088be645ada2b7611a394df19c }}/ras-worker:${{ github.sha }}
-              restart: always" > docker-compose.azure.yml
-
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
@@ -75,4 +57,4 @@ jobs:
           app-name: ras-expeditors
           slot-name: production
           publish-profile: ${{ secrets.AzureAppService_PublishProfile_f194e555b5274efd8cb7aa0530b04d3e }}
-          configuration-file: docker-compose.azure.yml
+          images: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_web:${{ github.sha }}
