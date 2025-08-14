@@ -1,0 +1,26 @@
+name: ras-expeditors
+runtime: docker
+config:
+  - type: config
+    name: general
+    properties:
+      - name: DOCKER_ENABLE_CI
+        value: true
+      - name: WEBSITES_ENABLE_APP_SERVICE_STORAGE
+        value: true
+      - name: DOCKER_REGISTRY_SERVER_URL
+        value: https://rasregistryacr.azurecr.io
+      - name: DOCKER_REGISTRY_SERVER_USERNAME
+        value: rasregistryacr
+      - name: WEBSITES_PORT
+        value: 80
+
+  - type: config
+    name: docker
+    properties:
+      - name: DOCKER_CUSTOM_IMAGE_NAME
+        value: rasregistryacr.azurecr.io/rasregistryacr/ras_expeditors_web:latest
+      - name: DOCKER_REGISTRY_SERVER_URL
+        value: https://rasregistryacr.azurecr.io
+      - name: WEBSITES_CONTAINER_START_TIME_LIMIT
+        value: 1800
