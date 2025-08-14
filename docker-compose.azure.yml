@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web:
+    image: rasregistryacr.azurecr.io/${DOCKER_REGISTRY_SERVER_USERNAME}/ras-web:${IMAGE_TAG}
+    ports:
+      - "80:5000"
+    environment:
+      - WEBSITES_PORT=80
+      - WEBSITES_ENABLE_APP_SERVICE_STORAGE=true
+    restart: always
+
+  worker:
+    image: rasregistryacr.azurecr.io/${DOCKER_REGISTRY_SERVER_USERNAME}/ras-worker:${IMAGE_TAG}
+    restart: always
